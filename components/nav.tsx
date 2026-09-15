@@ -9,9 +9,9 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   if (pathname === "/login") return null;
 
@@ -25,147 +25,300 @@ export function Navbar() {
       console.error(err);
     } finally {
       setLoggingOut(false);
-      setMenuOpen(false);
+      setMoreOpen(false);
+      setMobileMenuOpen(false);
     }
   };
 
-  // Close overflow menu on Escape or outside click
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && menuOpen) {
-        setMenuOpen(false);
-        menuTriggerRef.current?.focus();
+      if (e.key === "Escape") {
+        setMoreOpen(false);
+        setMobileMenuOpen(false);
       }
     }
-
     function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
       }
     }
-
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [menuOpen]);
+  }, []);
 
-  // Close menu on route change
   useEffect(() => {
-    setMenuOpen(false);
+    setMoreOpen(false);
+    setMobileMenuOpen(false);
   }, [pathname]);
 
-  const primaryNav = [
-    { href: "/", label: "Today" },
-    { href: "/calendar", label: "Calendar" },
-    { href: "/timeline", label: "Timeline" },
+  /* ── Route groups ── */
+  const secondaryRoutes = [
+    "/experiments", "/decisions", "/learning-records",
+    "/reviews/weekly", "/capabilities",
+    "/ai-review", "/ai-import", "/search", "/settings",
   ];
+  const isMoreActive = secondaryRoutes.some((r) => pathname.startsWith(r));
 
-  const overflowNav = [
-    { href: "/experiments", label: "Experiments" },
-    { href: "/decisions", label: "Decisions" },
+  const modules = [
+    { href: "/experiments",      label: "Experiments" },
+    { href: "/decisions",        label: "Decisions" },
     { href: "/learning-records", label: "Learning" },
-    { href: "/reviews/weekly", label: "Reviews" },
-    { href: "/capabilities", label: "Capabilities" },
-    { href: "/ai-review", label: "Prepare AI Review" },
-    { href: "/ai-import", label: "Import AI" },
+    { href: "/reviews/weekly",   label: "Reviews" },
+    { href: "/capabilities",     label: "Capabilities" },
+  ];
+  const aiSystem = [
+    { href: "/ai-review", label: "Prepare AI review" },
+    { href: "/ai-import", label: "Import AI assessment" },
+  ];
+  const utilities = [
+    { href: "/search",   label: "Search" },
     { href: "/settings", label: "Settings" },
   ];
 
-  return (
-    <header className="h-[52px] bg-[#16151A] border-b border-[#2A2934]/60 px-6 flex items-center justify-between sticky top-0 z-40 shadow-none">
-      {/* Left group — Brand + Primary Nav */}
-      <nav className="flex items-center gap-[32px]">
-        <Link
-          href="/"
-          className="font-display text-[15px] font-medium text-[#EDEAE3] tracking-tight text-decoration-none"
-        >
-          Capability OS
-        </Link>
+  /* ── Shared nav link style helper ── */
+  const navLinkClass = (href: string) => {
+    const isActive = pathname === href;
+    return `relative h-full flex items-center px-4 text-base font-sans font-medium transition-colors ${
+      isActive
+        ? "text-[#EDEAE3]"
+        : "text-[#8B8894] hover:text-[#EDEAE3]"
+    }`;
+  };
 
-        <ul className="flex items-center gap-[24px] list-none m-0 p-0">
-          {primaryNav.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`text-[14px] font-sans font-normal pb-[2px] border-b-2 text-decoration-none transition-colors duration-120 ${
-                    isActive
-                      ? "text-[#EDEAE3] border-[#C9A26D]"
-                      : "text-[#8B8894] border-transparent hover:text-[#EDEAE3]"
+  /* ── Dropdown item helper ── */
+  const dropdownItemClass = (href: string) =>
+    `block text-[15px] font-sans px-3 py-2.5 rounded-md transition-colors ${
+      pathname === href
+        ? "text-[#EDEAE3] bg-[#C9A26D]/12 font-medium"
+        : "text-[#8B8894] hover:text-[#EDEAE3] hover:bg-[#2A2934]/50"
+    }`;
+
+  const ActiveIndicator = () => (
+    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#C9A26D]" />
+  );
+
+  return (
+    <>
+      <header
+        style={{ height: 70 }}
+        className="w-full shrink-0 bg-[#16151A] border-b border-[#2A2934] sticky top-0 z-50"
+      >
+        {/* ── Inner container: wider than page content for navigation breathing room ── */}
+        <div className="w-full h-full max-w-6xl mx-auto px-6 sm:px-8 lg:px-10 flex items-center justify-between">
+
+          {/* Left: Brand + Nav */}
+          <div className="flex h-full items-center gap-10">
+            {/* Brand */}
+            <Link
+              href="/"
+              className="font-display text-xl font-semibold text-[#EDEAE3] tracking-tight shrink-0 hover:text-[#C9A26D] transition-colors"
+            >
+              Capability OS
+            </Link>
+
+            {/* Desktop nav group */}
+            <nav className="hidden md:flex h-full items-center gap-8">
+              <Link href="/" className={navLinkClass("/")}>
+                Today
+                {pathname === "/" && <ActiveIndicator />}
+              </Link>
+              <Link href="/calendar" className={navLinkClass("/calendar")}>
+                Calendar
+                {pathname === "/calendar" && <ActiveIndicator />}
+              </Link>
+              <Link href="/timeline" className={navLinkClass("/timeline")}>
+                Timeline
+                {pathname === "/timeline" && <ActiveIndicator />}
+              </Link>
+
+              {/* More trigger */}
+              <div className="relative h-full flex items-center" ref={moreRef}>
+                <button
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded={moreOpen}
+                  onClick={() => setMoreOpen((v) => !v)}
+                  className={`text-base h-full flex items-center font-sans font-medium px-2 transition-colors flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative ${
+                    isMoreActive || moreOpen
+                      ? "text-[#EDEAE3]"
+                      : "text-[#8B8894] hover:text-[#EDEAE3]"
                   }`}
                 >
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+                  More
+                  <svg
+                    className={`w-5 h-5 transition-transform duration-150 opacity-70 ${
+                      moreOpen ? "rotate-180" : ""
+                    }`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                  {isMoreActive && <ActiveIndicator />}
+                </button>
 
-      {/* Right group — Search trigger + Overflow menu */}
-      <div className="flex items-center gap-[20px] relative" ref={menuRef}>
-        <button
-          type="button"
-          onClick={() => router.push("/search")}
-          className="font-sans text-[12px] text-[#5C5A66] hover:text-[#8B8894] bg-transparent border-0 cursor-pointer transition-colors duration-120 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C9A26D] focus-visible:outline-offset-2"
-        >
-          Search <span className="ml-1 text-[11px]">⌘K</span>
-        </button>
+                {/* Dropdown - No shadow, uses surface-raised */}
+                {moreOpen && (
+                  <div
+                    role="menu"
+                    className="absolute left-0 top-full mt-1 w-60 bg-[#232229] border border-[#2A2934] rounded-lg py-1.5 px-1.5 z-50 shadow-none"
+                  >
+                    {/* Modules */}
+                    <div className="px-3 pt-2 pb-1.5 text-[13px] font-sans font-medium text-[#8B8894] tracking-wider uppercase select-none">
+                      Modules
+                    </div>
+                    {modules.map((item) => (
+                      <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
+                        {item.label}
+                      </Link>
+                    ))}
 
-        <button
-          ref={menuTriggerRef}
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="font-sans text-[14px] text-[#8B8894] hover:text-[#EDEAE3] bg-transparent border-0 cursor-pointer transition-colors duration-120 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C9A26D] focus-visible:outline-offset-2"
-        >
-          Menu
-        </button>
+                    <div className="my-1.5 mx-2 h-px bg-[#2A2934]/60" />
 
-        {/* Overflow Dropdown Panel */}
-        {menuOpen && (
-          <div
-            role="menu"
-            className="absolute right-0 top-full mt-2 w-[200px] bg-[#232229] border border-[#2A2934] rounded-[10px] p-[6px] z-50 flex flex-col shadow-none"
-          >
-            {overflowNav.map((item) => {
-              const isActive = pathname === item.href;
-              return (
+                    {/* AI System */}
+                    <div className="px-3 pt-1.5 pb-1.5 text-[13px] font-sans font-medium text-[#8B8894] tracking-wider uppercase select-none">
+                      AI System
+                    </div>
+                    {aiSystem.map((item) => (
+                      <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
+                        {item.label}
+                      </Link>
+                    ))}
+
+                    <div className="my-1.5 mx-2 h-px bg-[#2A2934]/60" />
+
+                    {/* Utilities */}
+                    {utilities.map((item) => (
+                      <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
+                        {item.label}
+                      </Link>
+                    ))}
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                      disabled={loggingOut}
+                      className="block w-full text-left text-[15px] font-sans px-3 py-2.5 rounded-md text-[#5C5A66] hover:text-[#B0715A] hover:bg-[#2A2934]/50 transition-colors cursor-pointer"
+                    >
+                      {loggingOut ? "Logging out…" : "Log out"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </nav>
+          </div>
+
+          {/* Right: Mobile trigger */}
+          <div className="flex items-center gap-3">
+
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              aria-label="Open menu"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              className="md:hidden p-2 -mr-2 text-[#8B8894] hover:text-[#EDEAE3] rounded-[6px] transition-colors"
+            >
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7h16M4 12h16M4 17h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Mobile drawer (Fullscreen overlay below header) ── */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-x-0 top-[70px] bottom-0 z-40 bg-[#16151A]/95 backdrop-blur-sm">
+          <nav className="h-full overflow-y-auto px-6 py-6 pb-20 space-y-6">
+            {/* Primary */}
+            <div className="space-y-1">
+              {[
+                { href: "/",         label: "Today" },
+                { href: "/calendar", label: "Calendar" },
+                { href: "/timeline", label: "Timeline" },
+              ].map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  role="menuitem"
-                  className={`block w-full text-left font-sans text-[14px] px-[12px] py-[10px] rounded-[6px] border-0 text-decoration-none transition-colors duration-120 ${
-                    isActive
-                      ? "text-[#EDEAE3] bg-[#C9A26D]/15 font-medium"
-                      : "text-[#8B8894] hover:text-[#EDEAE3] hover:bg-[rgba(201,162,109,0.12)]"
+                  className={`block py-2 text-[15px] font-sans ${
+                    pathname === item.href
+                      ? "text-[#EDEAE3] font-medium"
+                      : "text-[#8B8894]"
                   }`}
                 >
                   {item.label}
                 </Link>
-              );
-            })}
+              ))}
+            </div>
+            
+            <div className="h-px w-full bg-[#2A2934]/60" />
 
-            <div className="h-[1px] bg-[#2A2934]/50 my-[6px]" />
+            {/* Modules */}
+            <div className="space-y-2">
+              <div className="text-xs font-sans font-medium text-[#8B8894] tracking-widest uppercase">
+                Modules
+              </div>
+              <div className="space-y-1">
+                {modules.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`block py-2 text-[15px] font-sans ${
+                      pathname === item.href
+                        ? "text-[#EDEAE3] font-medium"
+                        : "text-[#8B8894]"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
 
-            <button
-              type="button"
-              role="menuitem"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="block w-full text-left font-sans text-[14px] px-[12px] py-[10px] rounded-[6px] border-0 text-[#8B8894] hover:text-[#EDEAE3] hover:bg-[rgba(201,162,109,0.12)] transition-colors duration-120 cursor-pointer"
-            >
-              {loggingOut ? "Logging out..." : "Logout"}
-            </button>
-          </div>
-        )}
-      </div>
-    </header>
+            <div className="h-px w-full bg-[#2A2934]/60" />
+
+            {/* AI + Utilities */}
+            <div className="space-y-2">
+              <div className="text-xs font-sans font-medium text-[#8B8894] tracking-widest uppercase">
+                AI System & Settings
+              </div>
+              <div className="space-y-1">
+                {[...aiSystem, ...utilities].map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`block py-2 text-[15px] font-sans ${
+                      pathname === item.href
+                        ? "text-[#EDEAE3] font-medium"
+                        : "text-[#8B8894]"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="block w-full text-left py-2 mt-4 text-[15px] font-sans text-[#5C5A66] hover:text-[#B0715A]"
+              >
+                {loggingOut ? "Logging out…" : "Log out"}
+              </button>
+            </div>
+          </nav>
+        </div>
+      )}
+    </>
   );
 }

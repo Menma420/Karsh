@@ -3,28 +3,17 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
-import { useState } from "react";
-import { 
-  PlusCircle, 
-  Calendar as CalendarIcon, 
-  Clock, 
-  FlaskConical, 
-  GitCommit, 
-  BookOpen, 
-  FileCheck, 
-  BrainCircuit, 
-  Copy, 
-  Download, 
-  Search as SearchIcon, 
-  Settings as SettingsIcon, 
-  LogOut,
-  LayoutDashboard
-} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  if (pathname === "/login") return null;
 
   const handleLogout = async () => {
     try {
@@ -36,72 +25,300 @@ export function Navbar() {
       console.error(err);
     } finally {
       setLoggingOut(false);
+      setMoreOpen(false);
+      setMobileMenuOpen(false);
     }
   };
 
-  if (pathname === "/login") return null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMoreOpen(false);
+        setMobileMenuOpen(false);
+      }
+    }
+    function handleClickOutside(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
-  const links = [
-    { href: "/", label: "Today", icon: LayoutDashboard },
-    { href: "/entries/new", label: "+ Record", icon: PlusCircle, highlight: true },
-    { href: "/calendar", label: "Calendar", icon: CalendarIcon },
-    { href: "/timeline", label: "Timeline", icon: Clock },
-    { href: "/experiments", label: "Experiments", icon: FlaskConical },
-    { href: "/decisions", label: "Decisions", icon: GitCommit },
-    { href: "/learning-records", label: "Learning", icon: BookOpen },
-    { href: "/reviews/weekly", label: "Reviews", icon: FileCheck },
-    { href: "/capabilities", label: "Capabilities", icon: BrainCircuit },
-    { href: "/ai-review", label: "Prepare AI Package", icon: Copy },
-    { href: "/ai-import", label: "Import AI Assessment", icon: Download },
-    { href: "/search", label: "Search", icon: SearchIcon },
-    { href: "/settings", label: "Settings", icon: SettingsIcon },
+  useEffect(() => {
+    setMoreOpen(false);
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  /* ── Route groups ── */
+  const secondaryRoutes = [
+    "/experiments", "/decisions", "/learning-records",
+    "/reviews/weekly", "/capabilities",
+    "/ai-review", "/ai-import", "/search", "/settings",
+  ];
+  const isMoreActive = secondaryRoutes.some((r) => pathname.startsWith(r));
+
+  const modules = [
+    { href: "/experiments",      label: "Experiments" },
+    { href: "/decisions",        label: "Decisions" },
+    { href: "/learning-records", label: "Learning" },
+    { href: "/reviews/weekly",   label: "Reviews" },
+    { href: "/capabilities",     label: "Capabilities" },
+  ];
+  const aiSystem = [
+    { href: "/ai-review", label: "Prepare AI review" },
+    { href: "/ai-import", label: "Import AI assessment" },
+  ];
+  const utilities = [
+    { href: "/search",   label: "Search" },
+    { href: "/settings", label: "Settings" },
   ];
 
+  /* ── Shared nav link style helper ── */
+  const navLinkClass = (href: string) => {
+    const isActive = pathname === href;
+    return `relative h-full flex items-center px-4 text-base font-sans font-medium transition-colors ${
+      isActive
+        ? "text-[#EDEAE3]"
+        : "text-[#8B8894] hover:text-[#EDEAE3]"
+    }`;
+  };
+
+  /* ── Dropdown item helper ── */
+  const dropdownItemClass = (href: string) =>
+    `block text-[15px] font-sans px-3 py-2.5 rounded-md transition-colors ${
+      pathname === href
+        ? "text-[#EDEAE3] bg-[#C9A26D]/12 font-medium"
+        : "text-[#8B8894] hover:text-[#EDEAE3] hover:bg-[#2A2934]/50"
+    }`;
+
+  const ActiveIndicator = () => (
+    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#C9A26D]" />
+  );
+
   return (
-    <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
-          <div className="flex items-center gap-6 overflow-x-auto py-2 no-scrollbar">
-            <Link href="/" className="font-semibold text-slate-100 whitespace-nowrap tracking-wide text-sm sm:text-base flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-sky-400"></span>
+    <>
+      <header
+        style={{ height: 70 }}
+        className="w-full shrink-0 bg-[#16151A] border-b border-[#2A2934] sticky top-0 z-50"
+      >
+        {/* ── Inner container: wider than page content for navigation breathing room ── */}
+        <div className="w-full h-full max-w-6xl mx-auto px-6 sm:px-8 lg:px-10 flex items-center justify-between">
+
+          {/* Left: Brand + Nav */}
+          <div className="flex h-full items-center gap-10">
+            {/* Brand */}
+            <Link
+              href="/"
+              className="font-display text-xl font-semibold text-[#EDEAE3] tracking-tight shrink-0 hover:text-[#C9A26D] transition-colors"
+            >
               Capability OS
             </Link>
 
-            <nav className="flex items-center gap-1">
-              {links.map((link) => {
-                const Icon = link.icon;
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-                      link.highlight
-                        ? "bg-sky-600 hover:bg-sky-500 text-white shadow-sm"
-                        : isActive
-                        ? "bg-slate-800 text-slate-100 border border-slate-700"
-                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+            {/* Desktop nav group */}
+            <nav className="hidden md:flex h-full items-center gap-8">
+              <Link href="/" className={navLinkClass("/")}>
+                Today
+                {pathname === "/" && <ActiveIndicator />}
+              </Link>
+              <Link href="/calendar" className={navLinkClass("/calendar")}>
+                Calendar
+                {pathname === "/calendar" && <ActiveIndicator />}
+              </Link>
+              <Link href="/timeline" className={navLinkClass("/timeline")}>
+                Timeline
+                {pathname === "/timeline" && <ActiveIndicator />}
+              </Link>
+
+              {/* More trigger */}
+              <div className="relative h-full flex items-center" ref={moreRef}>
+                <button
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded={moreOpen}
+                  onClick={() => setMoreOpen((v) => !v)}
+                  className={`text-base h-full flex items-center font-sans font-medium px-2 transition-colors flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative ${
+                    isMoreActive || moreOpen
+                      ? "text-[#EDEAE3]"
+                      : "text-[#8B8894] hover:text-[#EDEAE3]"
+                  }`}
+                >
+                  More
+                  <svg
+                    className={`w-5 h-5 transition-transform duration-150 opacity-70 ${
+                      moreOpen ? "rotate-180" : ""
                     }`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
                   >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{link.label}</span>
-                  </Link>
-                );
-              })}
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                  {isMoreActive && <ActiveIndicator />}
+                </button>
+
+                {/* Dropdown - No shadow, uses surface-raised */}
+                {moreOpen && (
+                  <div
+                    role="menu"
+                    className="absolute left-0 top-full mt-1 w-60 bg-[#232229] border border-[#2A2934] rounded-lg py-1.5 px-1.5 z-50 shadow-none"
+                  >
+                    {/* Modules */}
+                    <div className="px-3 pt-2 pb-1.5 text-[13px] font-sans font-medium text-[#8B8894] tracking-wider uppercase select-none">
+                      Modules
+                    </div>
+                    {modules.map((item) => (
+                      <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
+                        {item.label}
+                      </Link>
+                    ))}
+
+                    <div className="my-1.5 mx-2 h-px bg-[#2A2934]/60" />
+
+                    {/* AI System */}
+                    <div className="px-3 pt-1.5 pb-1.5 text-[13px] font-sans font-medium text-[#8B8894] tracking-wider uppercase select-none">
+                      AI System
+                    </div>
+                    {aiSystem.map((item) => (
+                      <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
+                        {item.label}
+                      </Link>
+                    ))}
+
+                    <div className="my-1.5 mx-2 h-px bg-[#2A2934]/60" />
+
+                    {/* Utilities */}
+                    {utilities.map((item) => (
+                      <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
+                        {item.label}
+                      </Link>
+                    ))}
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                      disabled={loggingOut}
+                      className="block w-full text-left text-[15px] font-sans px-3 py-2.5 rounded-md text-[#5C5A66] hover:text-[#B0715A] hover:bg-[#2A2934]/50 transition-colors cursor-pointer"
+                    >
+                      {loggingOut ? "Logging out…" : "Log out"}
+                    </button>
+                  </div>
+                )}
+              </div>
             </nav>
           </div>
 
-          <button
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-800 transition-colors ml-2 shrink-0"
-            title="Log out"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Logout</span>
-          </button>
+          {/* Right: Mobile trigger */}
+          <div className="flex items-center gap-3">
+
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              aria-label="Open menu"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              className="md:hidden p-2 -mr-2 text-[#8B8894] hover:text-[#EDEAE3] rounded-[6px] transition-colors"
+            >
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7h16M4 12h16M4 17h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* ── Mobile drawer (Fullscreen overlay below header) ── */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-x-0 top-[70px] bottom-0 z-40 bg-[#16151A]/95 backdrop-blur-sm">
+          <nav className="h-full overflow-y-auto px-6 py-6 pb-20 space-y-6">
+            {/* Primary */}
+            <div className="space-y-1">
+              {[
+                { href: "/",         label: "Today" },
+                { href: "/calendar", label: "Calendar" },
+                { href: "/timeline", label: "Timeline" },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`block py-2 text-[15px] font-sans ${
+                    pathname === item.href
+                      ? "text-[#EDEAE3] font-medium"
+                      : "text-[#8B8894]"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+            
+            <div className="h-px w-full bg-[#2A2934]/60" />
+
+            {/* Modules */}
+            <div className="space-y-2">
+              <div className="text-xs font-sans font-medium text-[#8B8894] tracking-widest uppercase">
+                Modules
+              </div>
+              <div className="space-y-1">
+                {modules.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`block py-2 text-[15px] font-sans ${
+                      pathname === item.href
+                        ? "text-[#EDEAE3] font-medium"
+                        : "text-[#8B8894]"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="h-px w-full bg-[#2A2934]/60" />
+
+            {/* AI + Utilities */}
+            <div className="space-y-2">
+              <div className="text-xs font-sans font-medium text-[#8B8894] tracking-widest uppercase">
+                AI System & Settings
+              </div>
+              <div className="space-y-1">
+                {[...aiSystem, ...utilities].map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`block py-2 text-[15px] font-sans ${
+                      pathname === item.href
+                        ? "text-[#EDEAE3] font-medium"
+                        : "text-[#8B8894]"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="block w-full text-left py-2 mt-4 text-[15px] font-sans text-[#5C5A66] hover:text-[#B0715A]"
+              >
+                {loggingOut ? "Logging out…" : "Log out"}
+              </button>
+            </div>
+          </nav>
+        </div>
+      )}
+    </>
   );
 }
