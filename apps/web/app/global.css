@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #16151A;
+  --surface: #1D1C22;
+  --surface-raised: #232229;
+  --border: #2A2934;
+  --border-soft: rgba(42, 41, 52, 0.5);
+
+  --text-primary: #EDEAE3;
+  --text-secondary: #8B8894;
+  --text-tertiary: #5C5A66;
+
+  --accent: #C9A26D;
+  --accent-soft: rgba(201, 162, 109, 0.12);
+
+  --status-active: #7A9B7E;
+  --status-attention: #B0715A;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-ui), 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: 0;
+  }
+
+  /* Universal shadow removal for flat, matte aesthetic */
+  *, ::before, ::after {
+    box-shadow: none !important;
+  }
+
+  /* Prevent text uppercase across app */
+  .uppercase, [class*="uppercase"] {
+    text-transform: none !important;
+  }
+}
+
+/* Custom quiet scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
