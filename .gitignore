@@ -6,3 +6,30 @@ data/
 .pgdata/
 .env
 *.log
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js Environment
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.vercel/
+
+# OS/Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Playwright & Testing
+playwright-report/
+test-results/
+coverage/
+
+# Temporary diagnostic scripts
+screenshot.js
+measure.js
