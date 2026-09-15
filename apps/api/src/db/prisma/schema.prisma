@@ -1,0 +1,254 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  createdAt     DateTime @default(now())
+
+  settings              UserSettings?
+  reflectionEntries     ReflectionEntry[]
+  experiments           Experiment[]
+  decisions             Decision[]
+  learningRecords       LearningRecord[]
+  weeklyReviews         WeeklyReview[]
+  monthlyReviews        MonthlyReview[]
+  goals                 Goal[]
+  aiAssessments         AIAssessment[]
+  capabilityAssessments CapabilityAssessment[]
+}
+
+model UserSettings {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id])
+  backfillDays    Int      @default(7)
+  timezone        String   @default("Asia/Kolkata")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ReflectionEntry {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
+  occurredOn    DateTime  @db.Date
+  occurredAt    DateTime? @db.Timestamptz
+  createdAt     DateTime  @default(now()) @db.Timestamptz
+  updatedAt     DateTime  @updatedAt
+
+  title         String?
+  intent        String?
+  outcome       String?
+  wentWell      String?
+  struggle      String?
+  whyItHappened String?
+  learned       String?
+  willChange    String?
+  notes         String?
+
+  tags          EntryTag[]
+  experimentLinks ExperimentEntryLink[]
+
+  @@index([userId, occurredOn])
+}
+
+model Tag {
+  id      String     @id @default(uuid())
+  userId  String
+  name    String
+  entries EntryTag[]
+
+  @@unique([userId, name])
+}
+
+model EntryTag {
+  entryId String
+  tagId   String
+  entry   ReflectionEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  tag     Tag             @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, tagId])
+}
+
+model Experiment {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
+  problem       String
+  hypothesis    String
+  intervention  String
+  measurement   String
+  startDate     DateTime  @db.Date
+  endDate       DateTime? @db.Date
+  status        ExperimentStatus @default(PLANNED)
+  result        String?
+  lesson        String?
+  nextAction    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  linkedEntries ExperimentEntryLink[]
+}
+
+enum ExperimentStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+model ExperimentEntryLink {
+  experimentId String
+  entryId      String
+  experiment   Experiment      @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  entry        ReflectionEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@id([experimentId, entryId])
+}
+
+model Decision {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+
+  date             DateTime @db.Date
+  decision         String
+  context          String?
+  options          Json?
+  chosenOption     String?
+  reasoning        String?
+  assumptions      String?
+  expectedOutcome  String?
+  confidence       Int?
+  actualOutcome    String?
+  lesson           String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model LearningRecord {
+  id                    String   @id @default(uuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id])
+
+  date                  DateTime @db.Date
+  topic                 String
+  source                String?
+  whatLearned           String?
+  explanation           String?
+  application            String?
+  unresolvedQuestions   String?
+  createdAt             DateTime @default(now())
+}
+
+model WeeklyReview {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  periodStart  DateTime @db.Date
+  periodEnd    DateTime @db.Date
+  answers      Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId, periodStart])
+}
+
+model MonthlyReview {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  periodStart  DateTime @db.Date
+  periodEnd    DateTime @db.Date
+  answers      Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId, periodStart])
+}
+
+model Goal {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  title       String
+  description String?
+  status      GoalStatus @default(ACTIVE)
+  startDate   DateTime?  @db.Date
+  targetDate  DateTime?  @db.Date
+  createdAt   DateTime   @default(now())
+}
+
+enum GoalStatus {
+  ACTIVE
+  ACHIEVED
+  ABANDONED
+}
+
+model Capability {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  level       Int
+  description String?
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+
+  assessments CapabilityAssessment[]
+}
+
+model AIPromptVersion {
+  id            String   @id @default(uuid())
+  version       String   @unique
+  promptText    String
+  schemaVersion String
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  assessments AIAssessment[]
+}
+
+model AIAssessment {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  periodStart     DateTime @db.Date
+  periodEnd       DateTime @db.Date
+  rawResponse     String
+  parsedPayload   Json
+  promptVersionId String
+  promptVersion   AIPromptVersion @relation(fields: [promptVersionId], references: [id])
+  schemaVersion   String
+  importedAt      DateTime @default(now())
+
+  capabilityAssessments CapabilityAssessment[]
+}
+
+model CapabilityAssessment {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  capabilityId    String
+  capability      Capability @relation(fields: [capabilityId], references: [id])
+  aiAssessmentId  String
+  aiAssessment    AIAssessment @relation(fields: [aiAssessmentId], references: [id])
+
+  score           Int
+  previousScore   Int?
+  confidence      String?
+  evidence        Json?
+  strengths       Json?
+  weaknesses      Json?
+  observations    Json?
+  createdAt       DateTime  @default(now())
+
+  @@index([userId, capabilityId, createdAt])
+}

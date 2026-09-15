@@ -1,0 +1,29 @@
+{
+  "name": "personal-capability-os",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:db": "node scripts/start-db.js",
+    "dev:api": "npm --workspace=apps/api run dev",
+    "dev:web": "npm --workspace=apps/web run dev",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "build": "npm --workspace=packages/shared-types run build && npm --workspace=apps/api run build && npm --workspace=apps/web run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "db:migrate": "npm --workspace=apps/api run db:migrate",
+    "db:seed": "npm --workspace=apps/api run db:seed",
+    "db:generate": "npm --workspace=apps/api run db:generate"
+  },
+  "devDependencies": {
+    "@types/supertest": "^7.2.1",
+    "concurrently": "^8.2.2",
+    "supertest": "^7.2.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
