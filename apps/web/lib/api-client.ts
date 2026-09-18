@@ -16,6 +16,12 @@ export async function apiFetch<T = any>(
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.href = "/login";
+      // Don't throw error to avoid console pollution during the redirect flip
+      return {} as T;
+    }
+
     const errorMsg = data?.error?.message || `HTTP ${res.status} error`;
     const err = new Error(errorMsg) as any;
     err.status = res.status;
