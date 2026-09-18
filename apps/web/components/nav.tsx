@@ -152,7 +152,7 @@ export function Navbar() {
               {moreOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 top-full mt-1 w-60 bg-[#232229] border border-[#2A2934] rounded-lg py-1.5 px-1.5 z-50 shadow-none"
+                  className="absolute right-0 top-full mt-1 w-60 bg-[#232229] border border-[#2A2934] rounded-lg py-1.5 px-1.5 z-50 shadow-none max-h-[calc(100dvh-80px)] overflow-y-auto overscroll-contain"
                 >
                   {/* Primary */}
                   <div className="px-3 pt-2 pb-1.5 text-[13px] font-sans font-medium text-[#8B8894] tracking-wider uppercase select-none">
