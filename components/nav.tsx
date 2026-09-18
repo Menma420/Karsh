@@ -109,59 +109,40 @@ export function Navbar() {
         className="w-full shrink-0 bg-[#16151A] border-b border-[#2A2934] sticky top-0 z-50"
       >
         {/* ── Inner container: wider than page content for navigation breathing room ── */}
-        <div className="w-full h-full max-w-6xl mx-auto px-6 sm:px-8 lg:px-10 flex items-center justify-between">
+        <div className="w-full h-full max-w-6xl mx-auto px-6 sm:px-8 lg:px-10 flex items-center justify-between relative">
 
-          {/* Left: Brand + Nav */}
-          <div className="flex h-full items-center gap-10">
-            {/* Brand */}
+          {/* 1. Left: Brand */}
+          <div className="flex h-full items-center z-10">
             <Link
               href="/"
               className="font-display text-xl font-semibold text-[#EDEAE3] tracking-tight shrink-0 hover:text-[#C9A26D] transition-colors"
             >
               Capability OS
             </Link>
-
-            {/* Desktop nav group */}
-            <nav className="hidden md:flex h-full items-center gap-8">
-              <Link href="/" className={navLinkClass("/")}>
-                Today
-                {pathname === "/" && <ActiveIndicator />}
-              </Link>
-              <Link href="/calendar" className={navLinkClass("/calendar")}>
-                Calendar
-                {pathname === "/calendar" && <ActiveIndicator />}
-              </Link>
-              <Link href="/timeline" className={navLinkClass("/timeline")}>
-                Timeline
-                {pathname === "/timeline" && <ActiveIndicator />}
-              </Link>
-
-            </nav>
           </div>
 
-          {/* Right: Mobile trigger */}
-          <div className="flex items-center gap-2 md:gap-6">
+          {/* 3. Right: Desktop More + Mobile trigger */}
+          <div className="flex items-center gap-2 md:gap-6 z-10">
             {/* More trigger */}
             <div className="hidden md:flex relative h-full items-center" ref={moreRef}>
               <button
                 type="button"
+                aria-label="More"
                 aria-haspopup="menu"
                 aria-expanded={moreOpen}
                 onClick={() => setMoreOpen((v) => !v)}
-                className={`text-base h-full flex items-center font-sans font-medium px-2 transition-colors flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative ${
+                className={`h-full flex items-center px-2 transition-colors bg-transparent border-none cursor-pointer relative ${
                   isMoreActive || moreOpen
                     ? "text-[#EDEAE3]"
                     : "text-[#8B8894] hover:text-[#EDEAE3]"
                 }`}
               >
-                More
-                <svg
-                  className={`w-5 h-5 transition-transform duration-150 opacity-70 ${
-                    moreOpen ? "rotate-180" : ""
-                  }`}
-                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <svg className="w-6 h-6 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {moreOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7h16M4 12h16M4 17h16" />
+                  )}
                 </svg>
                 {isMoreActive && <ActiveIndicator />}
               </button>
@@ -170,8 +151,24 @@ export function Navbar() {
               {moreOpen && (
                 <div
                   role="menu"
-                  className="absolute left-0 top-full mt-1 w-60 bg-[#232229] border border-[#2A2934] rounded-lg py-1.5 px-1.5 z-50 shadow-none"
+                  className="absolute right-0 top-full mt-1 w-60 bg-[#232229] border border-[#2A2934] rounded-lg py-1.5 px-1.5 z-50 shadow-none"
                 >
+                  {/* Primary */}
+                  <div className="px-3 pt-2 pb-1.5 text-[13px] font-sans font-medium text-[#8B8894] tracking-wider uppercase select-none">
+                    Primary
+                  </div>
+                  {[
+                    { href: "/",         label: "Today" },
+                    { href: "/calendar", label: "Calendar" },
+                    { href: "/timeline", label: "Timeline" },
+                  ].map((item) => (
+                    <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
+                      {item.label}
+                    </Link>
+                  ))}
+
+                  <div className="my-1.5 mx-2 h-px bg-[#2A2934]/60" />
+
                   {/* Modules */}
                   <div className="px-3 pt-2 pb-1.5 text-[13px] font-sans font-medium text-[#8B8894] tracking-wider uppercase select-none">
                     Modules
