@@ -73,7 +73,7 @@ export default function DashboardPage() {
             <h1 className="text-4xl font-display font-medium text-[#EDEAE3] tracking-tight">
               Today
             </h1>
-            <p className="text-sm text-[#8B8894] mt-1 font-sans">
+            <p className="text-sm text-[#8B8894] mt-1 font-sans" suppressHydrationWarning>
               {formattedDate}
             </p>
           </div>
