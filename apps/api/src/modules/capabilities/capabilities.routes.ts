@@ -31,7 +31,7 @@ capabilitiesRouter.get("/", requireAuth, async (req: AuthenticatedRequest, res: 
       },
     });
 
-    const result = capabilities.map((cap) => {
+    const result = capabilities.map((cap: typeof capabilities[0]) => {
       const latestAssessment = cap.assessments[0] || null;
       return {
         id: cap.id,
@@ -95,7 +95,7 @@ capabilitiesRouter.get("/:id/history", requireAuth, async (req: AuthenticatedReq
 
     return res.json({
       capability,
-      history: history.map((item) => ({
+      history: history.map((item: typeof history[0]) => ({
         id: item.id,
         score: item.score,
         previousScore: item.previousScore,

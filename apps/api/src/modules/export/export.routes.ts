@@ -40,7 +40,7 @@ exportRouter.get("/", requireAuth, async (req: AuthenticatedRequest, res: Respon
     mdBundle += `Exported: ${new Date().toISOString()}\n\n`;
 
     mdBundle += `## Reflection Entries (${entries.length})\n\n`;
-    entries.forEach((e) => {
+    entries.forEach((e: typeof entries[0]) => {
       mdBundle += `### Date: ${e.occurredOn.toISOString().split("T")[0]}\n`;
       if (e.title) mdBundle += `**Title:** ${e.title}\n`;
       if (e.intent) mdBundle += `**Intent:** ${e.intent}\n`;
