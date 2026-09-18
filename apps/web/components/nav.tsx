@@ -13,23 +13,6 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
-  if (pathname === "/login") return null;
-
-  const handleLogout = async () => {
-    try {
-      setLoggingOut(true);
-      await apiFetch("/auth/logout", { method: "POST" });
-      router.push("/login");
-      router.refresh();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoggingOut(false);
-      setMoreOpen(false);
-      setMobileMenuOpen(false);
-    }
-  };
-
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -55,6 +38,24 @@ export function Navbar() {
     setMoreOpen(false);
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  if (pathname === "/login") return null;
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await apiFetch("/auth/logout", { method: "POST" });
+      router.push("/login");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoggingOut(false);
+      setMoreOpen(false);
+      setMobileMenuOpen(false);
+    }
+  };
+
 
   /* ── Route groups ── */
   const secondaryRoutes = [
