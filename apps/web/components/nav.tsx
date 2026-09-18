@@ -235,8 +235,8 @@ export function Navbar() {
 
       {/* ── Mobile drawer (Fullscreen overlay below header) ── */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-x-0 top-[70px] bottom-0 z-40 bg-[#16151A]/95 backdrop-blur-sm">
-          <nav className="h-full overflow-y-auto px-6 py-6 pb-20 space-y-6">
+        <div className="md:hidden fixed inset-x-0 top-[70px] h-[calc(100dvh-70px)] z-40 bg-[#16151A]/95 backdrop-blur-sm">
+          <nav className="h-full w-full overflow-y-auto overscroll-contain px-6 py-6 pb-20 space-y-6">
             {/* Primary */}
             <div className="space-y-1">
               {[
