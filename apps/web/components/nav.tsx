@@ -136,85 +136,85 @@ export function Navbar() {
                 {pathname === "/timeline" && <ActiveIndicator />}
               </Link>
 
-              {/* More trigger */}
-              <div className="relative h-full flex items-center" ref={moreRef}>
-                <button
-                  type="button"
-                  aria-haspopup="menu"
-                  aria-expanded={moreOpen}
-                  onClick={() => setMoreOpen((v) => !v)}
-                  className={`text-base h-full flex items-center font-sans font-medium px-2 transition-colors flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative ${
-                    isMoreActive || moreOpen
-                      ? "text-[#EDEAE3]"
-                      : "text-[#8B8894] hover:text-[#EDEAE3]"
-                  }`}
-                >
-                  More
-                  <svg
-                    className={`w-5 h-5 transition-transform duration-150 opacity-70 ${
-                      moreOpen ? "rotate-180" : ""
-                    }`}
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                  {isMoreActive && <ActiveIndicator />}
-                </button>
-
-                {/* Dropdown - No shadow, uses surface-raised */}
-                {moreOpen && (
-                  <div
-                    role="menu"
-                    className="absolute left-0 top-full mt-1 w-60 bg-[#232229] border border-[#2A2934] rounded-lg py-1.5 px-1.5 z-50 shadow-none"
-                  >
-                    {/* Modules */}
-                    <div className="px-3 pt-2 pb-1.5 text-[13px] font-sans font-medium text-[#8B8894] tracking-wider uppercase select-none">
-                      Modules
-                    </div>
-                    {modules.map((item) => (
-                      <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
-                        {item.label}
-                      </Link>
-                    ))}
-
-                    <div className="my-1.5 mx-2 h-px bg-[#2A2934]/60" />
-
-                    {/* AI System */}
-                    <div className="px-3 pt-1.5 pb-1.5 text-[13px] font-sans font-medium text-[#8B8894] tracking-wider uppercase select-none">
-                      AI System
-                    </div>
-                    {aiSystem.map((item) => (
-                      <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
-                        {item.label}
-                      </Link>
-                    ))}
-
-                    <div className="my-1.5 mx-2 h-px bg-[#2A2934]/60" />
-
-                    {/* Utilities */}
-                    {utilities.map((item) => (
-                      <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
-                        {item.label}
-                      </Link>
-                    ))}
-
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={handleLogout}
-                      disabled={loggingOut}
-                      className="block w-full text-left text-[15px] font-sans px-3 py-2.5 rounded-md text-[#5C5A66] hover:text-[#B0715A] hover:bg-[#2A2934]/50 transition-colors cursor-pointer"
-                    >
-                      {loggingOut ? "Logging out…" : "Log out"}
-                    </button>
-                  </div>
-                )}
-              </div>
             </nav>
           </div>
 
           {/* Right: Mobile trigger */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-6">
+            {/* More trigger */}
+            <div className="hidden md:flex relative h-full items-center" ref={moreRef}>
+              <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={moreOpen}
+                onClick={() => setMoreOpen((v) => !v)}
+                className={`text-base h-full flex items-center font-sans font-medium px-2 transition-colors flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative ${
+                  isMoreActive || moreOpen
+                    ? "text-[#EDEAE3]"
+                    : "text-[#8B8894] hover:text-[#EDEAE3]"
+                }`}
+              >
+                More
+                <svg
+                  className={`w-5 h-5 transition-transform duration-150 opacity-70 ${
+                    moreOpen ? "rotate-180" : ""
+                  }`}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+                {isMoreActive && <ActiveIndicator />}
+              </button>
+
+              {/* Dropdown - No shadow, uses surface-raised */}
+              {moreOpen && (
+                <div
+                  role="menu"
+                  className="absolute left-0 top-full mt-1 w-60 bg-[#232229] border border-[#2A2934] rounded-lg py-1.5 px-1.5 z-50 shadow-none"
+                >
+                  {/* Modules */}
+                  <div className="px-3 pt-2 pb-1.5 text-[13px] font-sans font-medium text-[#8B8894] tracking-wider uppercase select-none">
+                    Modules
+                  </div>
+                  {modules.map((item) => (
+                    <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
+                      {item.label}
+                    </Link>
+                  ))}
+
+                  <div className="my-1.5 mx-2 h-px bg-[#2A2934]/60" />
+
+                  {/* AI System */}
+                  <div className="px-3 pt-1.5 pb-1.5 text-[13px] font-sans font-medium text-[#8B8894] tracking-wider uppercase select-none">
+                    AI System
+                  </div>
+                  {aiSystem.map((item) => (
+                    <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
+                      {item.label}
+                    </Link>
+                  ))}
+
+                  <div className="my-1.5 mx-2 h-px bg-[#2A2934]/60" />
+
+                  {/* Utilities */}
+                  {utilities.map((item) => (
+                    <Link key={item.href} href={item.href} role="menuitem" className={dropdownItemClass(item.href)}>
+                      {item.label}
+                    </Link>
+                  ))}
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="block w-full text-left text-[15px] font-sans px-3 py-2.5 rounded-md text-[#5C5A66] hover:text-[#B0715A] hover:bg-[#2A2934]/50 transition-colors cursor-pointer"
+                  >
+                    {loggingOut ? "Logging out…" : "Log out"}
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Mobile hamburger */}
             <button
