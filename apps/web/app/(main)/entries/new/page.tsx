@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
 
-export default function RecordEntryPage() {
+function RecordEntryForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -282,5 +282,13 @@ export default function RecordEntryPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function RecordEntryPage() {
+  return (
+    <React.Suspense fallback={<div className="text-xs text-[#8B8894] p-8 text-center">Loading editor...</div>}>
+      <RecordEntryForm />
+    </React.Suspense>
   );
 }

@@ -33,3 +33,4 @@ coverage/
 # Temporary diagnostic scripts
 screenshot.js
 measure.js
+.neon
