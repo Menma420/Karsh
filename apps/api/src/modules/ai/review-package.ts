@@ -1,6 +1,7 @@
 import { format, parseISO, eachDayOfInterval, differenceInDays } from "date-fns";
 import { ReviewPackageRequest } from "@personal-capability-os/shared-types";
 import { prisma } from "../../db/client";
+import { ApiError } from "../../lib/errors";
 
 export async function buildReviewPackage(userId: string, req: ReviewPackageRequest) {
   const startDate = new Date(req.periodStart + "T00:00:00.000Z");
@@ -13,7 +14,7 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
   });
 
   if (!promptVersion) {
-    throw new Error("Active AI review prompt is not configured.");
+    throw new ApiError(422, "Active AI review prompt is not configured.");
   }
 
   // Fetch user entries in date range
@@ -116,7 +117,7 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
   });
 
   if (activeCapabilities.length === 0) {
-    throw new Error("Capability taxonomy is not initialized.");
+    throw new ApiError(422, "Capability taxonomy is not initialized.");
   }
 
   // Fetch active goal

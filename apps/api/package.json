@@ -39,5 +39,9 @@
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.5"
+  },
+  "prisma": {
+    "schema": "src/db/prisma/schema.prisma",
+    "seed": "ts-node src/db/prisma/seed.ts"
   }
 }
