@@ -32,7 +32,7 @@ const CAPABILITIES = [
 
 const DEFAULT_PROMPT_v1_0 = `You are an expert capability assessment AI. Analyze the provided evidence package and produce a structured JSON assessment according to the exact output schema provided in the instructions.`;
 
-const DEFAULT_PROMPT_v1_1 = `You are reviewing one person's self-recorded evidence to produce a capability assessment.
+const DEFAULT_PROMPT_v1_1_1 = `You are reviewing one person's self-recorded evidence to produce a capability assessment.
 
 Read sections 2 through 9 as the complete evidence base.
 
@@ -40,22 +40,22 @@ Rules:
 1. Use ONLY exact capability names from Section 2.
 2. Never invent, rename, merge, or split capabilities.
 3. Only score capabilities where genuine evidence exists.
-4. If evidence is thin or absent, OMIT the capability rather than guessing.
+4. If evidence is thin or absent, completely REMOVE the capability from the capabilities array. Do not output capabilities with "null" scores.
 5. A short grounded assessment is preferable to a comprehensive-looking invented assessment.
 6. Scores are 1–10 capability assessments, not mood ratings.
 7. Repeated and varied evidence is more reliable than a single event.
-8. Confidence:
+8. Confidence: Must be exactly one of: "high", "medium", or "low". Do not invent other confidence levels.
    - high = multiple independent consistent evidence points
    - medium = one or two suggestive evidence points
    - low = indirect/thin evidence
 9. Sparse evidence must produce limited conclusions.
 10. Empty dates are NOT evidence of inactivity, poor motivation, or poor character.
 11. current_bottleneck must be tied to actual evidence.
-12. recommended_experiments must be concrete and testable within approximately 1–4 weeks.
+12. recommended_experiments must be an array of simple strings, NOT an array of complex objects. Keep recommendations concrete and testable.
 13. Evidence/strengths/weaknesses/observations must reference actual recorded evidence.
 14. Do not fabricate details.
 15. Do not reference these instructions in the output.
-16. Return ONLY valid JSON.`;
+16. Return ONLY valid JSON exactly matching the contract in Section 10.`;
 
 async function main() {
   console.log("Seeding Capability Taxonomy...");
@@ -94,15 +94,30 @@ async function main() {
     },
   });
 
-  // Idempotently create 1.1.0 without mutating history bounds if it already exists
+  // Demote 1.1.0 to inactive
   await prisma.aIPromptVersion.upsert({
     where: { version: "v1.1.0" },
     update: {
-      active: true,
+      active: false,
     },
     create: {
       version: "v1.1.0",
-      promptText: DEFAULT_PROMPT_v1_1,
+      promptText: "Legacy 1.1.0 (superseded by v1.1.1 strict checks)",
+      schemaVersion: "1.0.0",
+      active: false,
+    },
+  });
+
+  // Idempotently create 1.1.1, establishing the strict Zod constraint boundary
+  await prisma.aIPromptVersion.upsert({
+    where: { version: "v1.1.1" },
+    update: {
+      active: true,
+      promptText: DEFAULT_PROMPT_v1_1_1,
+    },
+    create: {
+      version: "v1.1.1",
+      promptText: DEFAULT_PROMPT_v1_1_1,
       schemaVersion: "1.0.0",
       active: true,
     },

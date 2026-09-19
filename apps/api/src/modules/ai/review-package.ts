@@ -467,7 +467,9 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
   "recurring_patterns": [],
   "successful_interventions": [],
   "failed_interventions": [],
-  "recommended_experiments": [],
+  "recommended_experiments": [
+    "Write a 2 week communication baseline to operationalize the failure mode"
+  ],
   "strategic_observations": []
 }
 \`\`\`\n`;

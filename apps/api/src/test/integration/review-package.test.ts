@@ -331,11 +331,11 @@ describe("AI Review Package Builder v2", () => {
       const count1 = await prisma.capability.count({ where: { active: true } });
       expect(count1).toBe(16);
 
-      // Verify v1.1.0 is active and v1.0.0 is inactive
+      // Verify v1.1.1 is active and v1.0.0 and v1.1.0 are inactive
       const activePrompt1 = await prisma.aIPromptVersion.findFirst({ where: { active: true } });
-      expect(activePrompt1?.version).toBe("v1.1.0");
+      expect(activePrompt1?.version).toBe("v1.1.1");
 
-      const inactivePrompt1 = await prisma.aIPromptVersion.findFirst({ where: { version: "v1.0.0" } });
+      const inactivePrompt1 = await prisma.aIPromptVersion.findFirst({ where: { version: "v1.1.0" } });
       expect(inactivePrompt1?.active).toBe(false);
 
       // Run it a SECOND time to prove idempotency
@@ -348,10 +348,10 @@ describe("AI Review Package Builder v2", () => {
       const count2 = await prisma.capability.count({ where: { active: true } });
       expect(count2).toBe(16);
 
-      // Only one active prompt should exist and it must still be v1.1.0
+      // Only one active prompt should exist and it must still be v1.1.1
       const activePrompts = await prisma.aIPromptVersion.findMany({ where: { active: true } });
       expect(activePrompts.length).toBe(1);
-      expect(activePrompts[0].version).toBe("v1.1.0");
+      expect(activePrompts[0].version).toBe("v1.1.1");
       
       // Cleanup seeded data so we don't pollute other future tests
       await prisma.capability.deleteMany();
