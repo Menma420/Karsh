@@ -232,6 +232,10 @@ describe("AI Review Package Builder v2", () => {
       await expect(buildReviewPackage(testUserId, req))
         .rejects
         .toThrow("Capability taxonomy is not initialized.");
+        
+      // Ensure the renderer performed absolutely NO writes (strict-read)
+      const capCount = await prisma.capability.count();
+      expect(capCount).toBe(0);
     });
 
     it("throws appropriately when the active AI Prompt version is missing entirely", async () => {
@@ -258,7 +262,55 @@ describe("AI Review Package Builder v2", () => {
         .rejects
         .toThrow("Active AI review prompt is not configured.");
         
+      // Ensure NO prompts were auto-injected
+      const promptCount = await prisma.aIPromptVersion.count();
+      expect(promptCount).toBe(0);
+        
       await prisma.capability.deleteMany();
+    });
+  });
+
+  describe("Canonical Seed Idempotency", () => {
+    it("permits multiple seed executions without duplicating the 16-capability taxonomy or mutating historical prompts", async () => {
+      // Execute the seed logic canonically by requiring it dynamically
+      // Alternatively, we safely mimic the exact upsert logic since seed.ts executes on imported
+      
+      const execSync = require("child_process").execSync;
+      // We run the seed script directly
+      execSync("npx ts-node src/db/prisma/seed.ts", { 
+        cwd: __dirname + "/../../../..", 
+        env: { ...process.env } // Pass through vitest's mocked test environment
+      });
+
+      // Verify the canonical count is exactly 16
+      const count1 = await prisma.capability.count({ where: { active: true } });
+      expect(count1).toBe(16);
+
+      // Verify v1.1.0 is active and v1.0.0 is inactive
+      const activePrompt1 = await prisma.aIPromptVersion.findFirst({ where: { active: true } });
+      expect(activePrompt1?.version).toBe("v1.1.0");
+
+      const inactivePrompt1 = await prisma.aIPromptVersion.findFirst({ where: { version: "v1.0.0" } });
+      expect(inactivePrompt1?.active).toBe(false);
+
+      // Run it a SECOND time to prove idempotency
+      execSync("npx ts-node src/db/prisma/seed.ts", { 
+        cwd: __dirname + "/../../../..", 
+        env: { ...process.env }
+      });
+
+      // Count must still be exactly 16
+      const count2 = await prisma.capability.count({ where: { active: true } });
+      expect(count2).toBe(16);
+
+      // Only one active prompt should exist and it must still be v1.1.0
+      const activePrompts = await prisma.aIPromptVersion.findMany({ where: { active: true } });
+      expect(activePrompts.length).toBe(1);
+      expect(activePrompts[0].version).toBe("v1.1.0");
+      
+      // Cleanup seeded data so we don't pollute other future tests
+      await prisma.capability.deleteMany();
+      await prisma.aIPromptVersion.deleteMany();
     });
   });
 });
