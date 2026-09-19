@@ -206,5 +206,59 @@ describe("AI Review Package Builder v2", () => {
     expect(pkg.markdown).not.toContain("Test Hidden");
     expect(pkg.markdown).not.toContain("Level 3 — Influence");
     expect(pkg.markdown).not.toContain("Level 4 — Domain");
+
+    // Clean up specifically for next tests
+    await prisma.capability.deleteMany();
+  });
+
+  describe("Failure and Configuration State Handlers", () => {
+    it("throws appropriately when active capability taxonomy is missing or entirely absent", async () => {
+      await prisma.capability.deleteMany(); // Guaranteed empty
+
+      const req = {
+        periodStart: "2026-09-01",
+        periodEnd: "2026-09-02",
+        include: {
+          entries: true,
+          outcomes: true,
+          experiments: false,
+          decisions: false,
+          learningRecords: false,
+          reviews: false,
+          capabilityHistory: false,
+        }
+      };
+
+      await expect(buildReviewPackage(testUserId, req))
+        .rejects
+        .toThrow("Capability taxonomy is not initialized.");
+    });
+
+    it("throws appropriately when the active AI Prompt version is missing entirely", async () => {
+      await prisma.capability.create({
+        data: { name: "Test Meta", level: 1, sortOrder: 1, active: true }
+      });
+      await prisma.aIPromptVersion.deleteMany(); // Purge all prompts
+
+      const req = {
+        periodStart: "2026-09-01",
+        periodEnd: "2026-09-02",
+        include: {
+          entries: true,
+          outcomes: true,
+          experiments: false,
+          decisions: false,
+          learningRecords: false,
+          reviews: false,
+          capabilityHistory: false,
+        }
+      };
+
+      await expect(buildReviewPackage(testUserId, req))
+        .rejects
+        .toThrow("Active AI review prompt is not configured.");
+        
+      await prisma.capability.deleteMany();
+    });
   });
 });
