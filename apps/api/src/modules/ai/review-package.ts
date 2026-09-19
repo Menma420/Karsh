@@ -152,7 +152,7 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
   // Section 0
   const nowStr = new Date().toISOString();
   md += `# Personal Capability OS — AI Review Package\n\n`;
-  md += `Generated: ${nowStr} · Prompt v${promptVersion?.version || "1.0.0"} · Schema v${promptVersion?.schemaVersion || "1.0.0"}\n\n`;
+  md += `Generated: ${nowStr} · Prompt ${promptVersion?.version || "v1.0.0"} · Schema v${promptVersion?.schemaVersion || "1.0.0"}\n\n`;
   
   const daysDiff = differenceInDays(endDate, startDate) + 1;
   md += `Assessment period: ${req.periodStart} → ${req.periodEnd} (${daysDiff} days)\n\n`;

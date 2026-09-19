@@ -211,6 +211,51 @@ describe("AI Review Package Builder v2", () => {
     await prisma.capability.deleteMany();
   });
 
+  it("regression test: renders exact prompt version header (no double vv) and dynamic prompt text", async () => {
+    // Setup a dummy active taxonomy so we bypass the fallback guards
+    await prisma.capability.create({
+      data: { name: "Test Cap", level: 1, sortOrder: 1, active: true }
+    });
+
+    // Create a precise mock AIPromptVersion
+    const dynamicPromptText = "This string proves section 10 reads dynamically from DB!";
+    const testPrompt = await prisma.aIPromptVersion.create({
+      data: {
+        version: "v9.9.9-beta", // Explicitly contains 'v'
+        schemaVersion: "9.9.9",
+        active: true,
+        promptText: dynamicPromptText,
+      }
+    });
+
+    const periodStart = "2026-09-01";
+    const periodEnd = "2026-09-02";
+
+    const pkg = await buildReviewPackage(testUserId, { 
+      periodStart, 
+      periodEnd, 
+      include: {
+        entries: false, outcomes: false, experiments: false, decisions: false, learningRecords: false, reviews: false, capabilityHistory: false
+      } 
+    });
+
+    // Asset Header regression limit (Only one v)
+    expect(pkg.markdown).toContain("Prompt v9.9.9-beta");
+    expect(pkg.markdown).not.toContain("Prompt vv9.9.9-beta");
+    expect(pkg.markdown).toContain("Schema v9.9.9");
+
+    // Assert exact Section 10 render injection payload
+    expect(pkg.markdown).toContain("## 10. AI assessment instructions & output contract");
+    expect(pkg.markdown).toContain(dynamicPromptText);
+
+    // Ensure it properly exported metadata payload downstream
+    expect(pkg.promptVersionId).toBe(testPrompt.id);
+
+    // Teardown
+    await prisma.aIPromptVersion.deleteMany();
+    await prisma.capability.deleteMany();
+  });
+
   describe("Failure and Configuration State Handlers", () => {
     it("throws appropriately when active capability taxonomy is missing or entirely absent", async () => {
       await prisma.capability.deleteMany(); // Guaranteed empty
