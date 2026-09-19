@@ -123,7 +123,7 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
   if (req.include.capabilityHistory) {
     const latestAssessmentWrapper = await prisma.aIAssessment.findFirst({
       where: { userId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { importedAt: "desc" },
       include: {
         capabilityAssessments: {
           include: { capability: true }
@@ -132,7 +132,7 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
     });
 
     if (latestAssessmentWrapper) {
-      mostRecentAssessmentDate = latestAssessmentWrapper.createdAt;
+      mostRecentAssessmentDate = latestAssessmentWrapper.importedAt;
       mostRecentCapabilities = latestAssessmentWrapper.capabilityAssessments;
     }
   }
