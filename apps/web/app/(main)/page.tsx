@@ -7,7 +7,7 @@ import { apiFetch } from "@/lib/api-client";
 export default function DashboardPage() {
   const [capabilities, setCapabilities] = useState<any[]>([]);
   const [todayEntries, setTodayEntries] = useState<any[]>([]);
-  const [activeExperiment, setActiveExperiment] = useState<any>(null);
+  const [activeExperiments, setActiveExperiments] = useState<any[]>([]);
   const [bottleneck, setBottleneck] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +33,7 @@ export default function DashboardPage() {
         setCapabilities(capRes.capabilities || []);
         setTodayEntries(entryRes.entries || []);
         if (expRes.experiments && expRes.experiments.length > 0) {
-          setActiveExperiment(expRes.experiments[0]);
+          setActiveExperiments(expRes.experiments);
         }
 
         const withAssessments = (capRes.capabilities || []).filter((c: any) => c.latestAssessment);
@@ -99,15 +99,19 @@ export default function DashboardPage() {
             <span className="text-xs text-[#8B8894] font-medium block mb-1">
               Current focus
             </span>
-            {activeExperiment ? (
-              <>
-                <h2 className="text-2xl sm:text-3xl font-display font-medium text-[#EDEAE3] leading-snug max-w-2xl">
-                  {activeExperiment.problem}
-                </h2>
-                <p className="text-xs text-[#8B8894] mt-2 max-w-xl leading-relaxed">
-                  {activeExperiment.hypothesis}
-                </p>
-              </>
+            {activeExperiments.length > 0 ? (
+              <div className="space-y-6">
+                {activeExperiments.map((exp: any) => (
+                  <div key={`focus-${exp.id}`}>
+                    <h2 className="text-2xl sm:text-3xl font-display font-medium text-[#EDEAE3] leading-snug max-w-2xl">
+                      {exp.problem}
+                    </h2>
+                    <p className="text-xs text-[#8B8894] mt-2 max-w-xl leading-relaxed">
+                      {exp.hypothesis}
+                    </p>
+                  </div>
+                ))}
+              </div>
             ) : (
               <h2 className="text-xl font-display text-[#8B8894] italic leading-snug max-w-xl">
                 No active focus
@@ -140,35 +144,40 @@ export default function DashboardPage() {
       {/* Weight 2 — Active Strip (Left-edge accent bar, subtle surface fill) */}
       <section className="space-y-2">
         <span className="text-xs text-[#8B8894] font-medium block">
-          This week&apos;s experiment
+          This week&apos;s experiment{activeExperiments.length !== 1 ? 's' : ''}
         </span>
 
-        {activeExperiment ? (
-          <Link
-            href={`/experiments/${activeExperiment.id}`}
-            className="block bg-[#1D1C22] border-l-2 border-[#C9A26D] rounded-r-[10px] p-4 sm:p-5 space-y-3 hover:bg-[#2A2934]/60 transition-colors cursor-pointer group"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <h3 className="text-sm font-medium text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors">
-                {activeExperiment.problem}
-              </h3>
-              <span className="text-xs text-[#7A9B7E] flex items-center gap-1.5 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#7A9B7E]" />
-                <span>Active</span>
-              </span>
-            </div>
+        {activeExperiments.length > 0 ? (
+          <div className="space-y-3">
+            {activeExperiments.map((exp: any) => (
+              <Link
+                key={exp.id}
+                href={`/experiments/${exp.id}`}
+                className="block bg-[#1D1C22] border-l-2 border-[#C9A26D] rounded-r-[10px] p-4 sm:p-5 space-y-3 hover:bg-[#2A2934]/60 transition-colors cursor-pointer group"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <h3 className="text-sm font-medium text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors">
+                    {exp.problem}
+                  </h3>
+                  <span className="text-xs text-[#7A9B7E] flex items-center gap-1.5 shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#7A9B7E]" />
+                    <span>Active</span>
+                  </span>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="text-[#8B8894] block">Problem</span>
-                <p className="text-[#EDEAE3] mt-0.5">{activeExperiment.problem}</p>
-              </div>
-              <div>
-                <span className="text-[#8B8894] block">Intervention</span>
-                <p className="text-[#EDEAE3] mt-0.5">{activeExperiment.intervention}</p>
-              </div>
-            </div>
-          </Link>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="text-[#8B8894] block">Problem</span>
+                    <p className="text-[#EDEAE3] mt-0.5">{exp.problem}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#8B8894] block">Intervention</span>
+                    <p className="text-[#EDEAE3] mt-0.5">{exp.intervention}</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         ) : (
           <div className="bg-[#1D1C22]/40 border-l-2 border-[#2A2934] rounded-r-[10px] p-4 sm:p-5 text-center">
             <p className="text-sm text-[#5C5A66] italic mb-1.5">No active experiment.</p>

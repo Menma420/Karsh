@@ -236,7 +236,9 @@ export default function EditEntryPage() {
             }}
             className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] focus:outline-none focus:border-[#C9A26D]"
           >
-            <option value="">No experiment ▼</option>
+            <option value="" disabled>
+              {selectedExperimentIds.length === 0 ? "Select an experiment to link..." : "Link another experiment..."}
+            </option>
             {availableExperiments.map((exp) => (
               <option key={exp.id} value={exp.id}>
                 [{exp.status}] {exp.problem}

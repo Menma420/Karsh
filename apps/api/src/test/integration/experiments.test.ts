@@ -11,6 +11,12 @@ describe("Experiments & Evidence M:N Integration Tests", () => {
   const today = todayInTimezone(tz);
 
   beforeAll(async () => {
+    // SECURITY GUARDRAIL: Never allow wiping data against the production branch!
+    if (process.env.NEON_BRANCH === "production" || process.env.NODE_ENV === "production" || process.env.DATABASE_URL?.includes("ep-cool-heart")) {
+      console.error("FATAL: Refusing to execute integration tests against production DB!");
+      process.exit(1);
+    }
+
     // Clean database before test suite
     await prisma.experimentEntryLink.deleteMany();
     await prisma.entryTag.deleteMany();
