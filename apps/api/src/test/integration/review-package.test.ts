@@ -21,6 +21,8 @@ describe("AI Review Package Builder v2", () => {
     await prisma.learningRecord.deleteMany();
     await prisma.userSettings.deleteMany();
     await prisma.user.deleteMany();
+    await prisma.capabilityAssessment.deleteMany();
+    await prisma.capability.deleteMany();
 
     const testUser = await prisma.user.create({
       data: {
@@ -52,11 +54,12 @@ describe("AI Review Package Builder v2", () => {
       periodStart,
       periodEnd,
       include: {
+        entries: true,
+        outcomes: true,
         experiments: true,
         decisions: true,
         learningRecords: true,
         reviews: true,
-        capabilities: true,
         capabilityHistory: true,
       }
     };
@@ -136,11 +139,12 @@ describe("AI Review Package Builder v2", () => {
       periodStart,
       periodEnd,
       include: {
+        entries: true,
+        outcomes: true,
         experiments: true,
         decisions: false,
         learningRecords: false,
         reviews: false,
-        capabilities: false,
         capabilityHistory: false,
       }
     };
@@ -159,5 +163,48 @@ describe("AI Review Package Builder v2", () => {
     expect(pkg.markdown).toContain("Result:\nNot yet recorded.");
     expect(pkg.markdown).toContain("Lesson:\nNot yet recorded.");
     expect(pkg.markdown).toContain("Next action:\nNot yet recorded.");
+  });
+
+  it("renders capability taxonomy dynamically based on active capabilities in the database", async () => {
+    // Insert test capabilities
+    await prisma.capability.create({
+      data: { name: "Test Meta", level: 1, sortOrder: 1, active: true }
+    });
+    await prisma.capability.create({
+      data: { name: "Test Systems", level: 2, sortOrder: 1, active: true }
+    });
+    
+    // Insert an inactive one that should NOT appear
+    await prisma.capability.create({
+      data: { name: "Test Hidden", level: 3, sortOrder: 1, active: false }
+    });
+
+    const periodStart = "2026-09-01";
+    const periodEnd = "2026-09-02";
+
+    const pkg = await buildReviewPackage(testUserId, { 
+      periodStart, 
+      periodEnd, 
+      include: {
+        entries: true,
+        outcomes: true,
+        experiments: false,
+        decisions: false,
+        learningRecords: false,
+        reviews: false,
+        capabilityHistory: false,
+      } 
+    });
+
+    expect(pkg.markdown).toContain("## 2. Capability taxonomy");
+    expect(pkg.markdown).toContain("Level 1 — Machine");
+    expect(pkg.markdown).toContain("- Test Meta");
+    expect(pkg.markdown).toContain("Level 2 — Intelligence");
+    expect(pkg.markdown).toContain("- Test Systems");
+
+    // Must NOT contain inactive capabilities or empty levels
+    expect(pkg.markdown).not.toContain("Test Hidden");
+    expect(pkg.markdown).not.toContain("Level 3 — Influence");
+    expect(pkg.markdown).not.toContain("Level 4 — Domain");
   });
 });

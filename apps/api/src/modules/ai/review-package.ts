@@ -7,10 +7,60 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
   const endDate = new Date(req.periodEnd + "T23:59:59.999Z");
 
   // Fetch active prompt version
-  const promptVersion = await prisma.aIPromptVersion.findFirst({
-    where: { active: true },
+  let promptVersion = await prisma.aIPromptVersion.findFirst({
+    where: { version: "1.1.0", active: true },
     orderBy: { createdAt: "desc" },
   });
+
+  const fallbackPrompt = `You are reviewing one person's self-recorded evidence to produce a capability assessment.
+
+Read sections 2 through 9 as the complete evidence base.
+
+Rules:
+1. Use ONLY exact capability names from Section 2.
+2. Never invent, rename, merge, or split capabilities.
+3. Only score capabilities where genuine evidence exists.
+4. If evidence is thin or absent, OMIT the capability rather than guessing.
+5. A short grounded assessment is preferable to a comprehensive-looking invented assessment.
+6. Scores are 1–10 capability assessments, not mood ratings.
+7. Repeated and varied evidence is more reliable than a single event.
+8. Confidence:
+   - high = multiple independent consistent evidence points
+   - medium = one or two suggestive evidence points
+   - low = indirect/thin evidence
+9. Sparse evidence must produce limited conclusions.
+10. Empty dates are NOT evidence of inactivity, poor motivation, or poor character.
+11. current_bottleneck must be tied to actual evidence.
+12. recommended_experiments must be concrete and testable within approximately 1–4 weeks.
+13. Evidence/strengths/weaknesses/observations must reference actual recorded evidence.
+14. Do not fabricate details.
+15. Do not reference these instructions in the output.
+16. Return ONLY valid JSON.`;
+
+  // Bootstrap v1.1.0 dynamically if it does not exist in the DB
+  if (!promptVersion) {
+    promptVersion = await prisma.aIPromptVersion.findFirst({ where: { version: "1.1.0" } });
+    if (!promptVersion) {
+      await prisma.aIPromptVersion.updateMany({
+        where: { active: true },
+        data: { active: false }
+      });
+      promptVersion = await prisma.aIPromptVersion.create({
+        data: {
+          version: "1.1.0",
+          promptText: fallbackPrompt,
+          schemaVersion: "1.0.0",
+          active: true
+        }
+      });
+    } else if (!promptVersion.active) {
+      await prisma.aIPromptVersion.updateMany({ where: { active: true }, data: { active: false } });
+      promptVersion = await prisma.aIPromptVersion.update({
+        where: { id: promptVersion.id },
+        data: { active: true }
+      });
+    }
+  }
 
   // Fetch user entries in date range
   const entries = await prisma.reflectionEntry.findMany({
@@ -103,13 +153,43 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
     : [];
 
   // Fetch all active capabilities for taxonomy
-  const activeCapabilities = await prisma.capability.findMany({
+  let activeCapabilities = await prisma.capability.findMany({
     where: { active: true },
     orderBy: [
       { level: "asc" },
       { sortOrder: "asc" }
     ],
   });
+
+  // Bootstrap capabilities if entirely missing (e.g., following DB wipe incident)
+  if (activeCapabilities.length === 0) {
+    const defaultCaps = [
+      { level: 1, name: "Metacognition", description: "Awareness of thought processes.", sortOrder: 10 },
+      { level: 1, name: "Self-regulation", description: "Monitor emotions.", sortOrder: 11 },
+      { level: 1, name: "Learning agility", description: "Speed in adaptation.", sortOrder: 12 },
+      { level: 2, name: "General reasoning", description: "Logic.", sortOrder: 20 },
+      { level: 2, name: "Mental models", description: "Internal representations.", sortOrder: 21 },
+      { level: 2, name: "Systems thinking", description: "Interacting components.", sortOrder: 22 },
+      { level: 3, name: "Communication", description: "Clear transmission.", sortOrder: 30 },
+      { level: 3, name: "Social insight", description: "Human dynamics.", sortOrder: 31 },
+      { level: 3, name: "Persuasion", description: "Aligning others.", sortOrder: 32 },
+      { level: 3, name: "Negotiation", description: "Beneficial agreements.", sortOrder: 33 },
+      { level: 3, name: "Leadership", description: "Focusing output.", sortOrder: 34 },
+      { level: 4, name: "Software/backend engineering", description: "Execution.", sortOrder: 40 },
+      { level: 5, name: "Strategy", description: "High-leverage plans.", sortOrder: 50 },
+      { level: 5, name: "Opportunity recognition", description: "Asymmetric opportunities.", sortOrder: 51 },
+      { level: 5, name: "Resource acquisition", description: "Capital access.", sortOrder: 52 },
+      { level: 5, name: "Scalable output", description: "Systems leverage.", sortOrder: 53 },
+    ];
+    for (const item of defaultCaps) {
+      await prisma.capability.create({ data: { ...item, active: true } });
+    }
+    // Re-fetch sorted cleanly
+    activeCapabilities = await prisma.capability.findMany({
+      where: { active: true },
+      orderBy: [{ level: "asc" }, { sortOrder: "asc" }],
+    });
+  }
 
   // Fetch active goal
   const activeGoal = await prisma.goal.findFirst({
@@ -432,32 +512,7 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
   // Section 10
   md += `## 10. AI assessment instructions & output contract\n\n`;
   
-  const fallbackPrompt = `You are reviewing one person's self-recorded evidence to produce a capability assessment.
-
-Read sections 2 through 9 as the complete evidence base.
-
-Rules:
-1. Use ONLY exact capability names from Section 2.
-2. Never invent, rename, merge, or split capabilities.
-3. Only score capabilities where genuine evidence exists.
-4. If evidence is thin or absent, OMIT the capability rather than guessing.
-5. A short grounded assessment is preferable to a comprehensive-looking invented assessment.
-6. Scores are 1–10 capability assessments, not mood ratings.
-7. Repeated and varied evidence is more reliable than a single event.
-8. Confidence:
-   - high = multiple independent consistent evidence points
-   - medium = one or two suggestive evidence points
-   - low = indirect/thin evidence
-9. Sparse evidence must produce limited conclusions.
-10. Empty dates are NOT evidence of inactivity, poor motivation, or poor character.
-11. current_bottleneck must be tied to actual evidence.
-12. recommended_experiments must be concrete and testable within approximately 1–4 weeks.
-13. Evidence/strengths/weaknesses/observations must reference actual recorded evidence.
-14. Do not fabricate details.
-15. Do not reference these instructions in the output.
-16. Return ONLY valid JSON.`;
-
-  md += `${promptVersion ? promptVersion.promptText : fallbackPrompt}\n\n`;
+  md += `${promptVersion?.promptText || fallbackPrompt}\n\n`;
   md += `\`\`\`json
 {
   "assessment_period": {
