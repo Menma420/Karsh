@@ -33,8 +33,25 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
     ? await prisma.experiment.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
+        include: {
+          linkedEntries: { include: { entry: true } },
+        },
       })
     : [];
+
+  if (experiments.length > 0) {
+    experiments.forEach(exp => {
+      exp.linkedEntries.sort((a, b) => {
+        const d1 = a.entry.occurredOn.getTime();
+        const d2 = b.entry.occurredOn.getTime();
+        if (d1 !== d2) return d1 - d2;
+        const t1 = a.entry.occurredAt?.getTime() || 0;
+        const t2 = b.entry.occurredAt?.getTime() || 0;
+        if (t1 !== t2) return t1 - t2;
+        return a.entry.createdAt.getTime() - b.entry.createdAt.getTime();
+      });
+    });
+  }
 
   // Fetch decisions
   const decisions = req.include.decisions
@@ -156,11 +173,37 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
 
   // Section: Experiments
   if (req.include.experiments && experiments.length > 0) {
-    markdown += `## 3. Experiments\n`;
+    markdown += `## 3. Experiments\n\n`;
     experiments.forEach((exp) => {
-      markdown += `- **[${exp.status}] ${exp.problem}**: Hypothesis: "${exp.hypothesis}". Intervention: "${exp.intervention}". Result: ${exp.result || "N/A"}\n`;
+      // Using problem as title fallback or static identifier string if desired.
+      markdown += `### ${exp.problem}\n\n`;
+      markdown += `Status: ${exp.status}\n\n`;
+      markdown += `Problem:\n${exp.problem}\n\n`;
+      markdown += `Hypothesis:\n${exp.hypothesis}\n\n`;
+      markdown += `Protocol:\n${exp.intervention}\n\n`;
+      markdown += `Measurement:\n${exp.measurement}\n\n`;
+      
+      markdown += `Linked Evidence:\n\n`;
+      if (exp.linkedEntries && exp.linkedEntries.length > 0) {
+        exp.linkedEntries.forEach((link) => {
+          const entry = link.entry;
+          const dStr = format(entry.occurredOn, "yyyy-MM-dd");
+          markdown += `#### ${dStr}${entry.title ? ` — ${entry.title}` : ''}\n\n`;
+          if (entry.intent) markdown += `Intent:\n${entry.intent}\n\n`;
+          if (entry.outcome) markdown += `Outcome:\n${entry.outcome}\n\n`;
+          if (entry.struggle) markdown += `Struggles:\n${entry.struggle}\n\n`;
+          if (entry.learned) markdown += `Learned:\n${entry.learned}\n\n`;
+          if (entry.willChange) markdown += `Changes:\n${entry.willChange}\n\n`;
+          if (entry.notes) markdown += `Notes:\n${entry.notes}\n\n`;
+        });
+      } else {
+        markdown += `*No evidence linked yet.*\n\n`;
+      }
+      
+      markdown += `Result:\n${exp.result || "N/A"}\n\n`;
+      markdown += `Lesson:\n${exp.lesson || "N/A"}\n\n`;
+      markdown += `Next Action:\n${exp.nextAction || "N/A"}\n\n`;
     });
-    markdown += `\n`;
   }
 
   // Section: Decisions

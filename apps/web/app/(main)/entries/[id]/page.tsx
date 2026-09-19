@@ -26,6 +26,23 @@ export default function EditEntryPage() {
   const [notes, setNotes] = useState("");
   const [tagsInput, setTagsInput] = useState("");
 
+  const [availableExperiments, setAvailableExperiments] = useState<any[]>([]);
+  const [initialExperimentIds, setInitialExperimentIds] = useState<string[]>([]);
+  const [selectedExperimentIds, setSelectedExperimentIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    apiFetch("/experiments").then((res) => {
+      if (res.experiments) {
+        const sorted = [...res.experiments].sort((a: any, b: any) => {
+          if (a.status === "ACTIVE" && b.status !== "ACTIVE") return -1;
+          if (b.status === "ACTIVE" && a.status !== "ACTIVE") return 1;
+          return 0;
+        });
+        setAvailableExperiments(sorted);
+      }
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     async function loadEntry() {
       try {
@@ -50,6 +67,12 @@ export default function EditEntryPage() {
 
           if (entry.tags && entry.tags.length > 0) {
             setTagsInput(entry.tags.map((t: any) => t.tag.name).join(", "));
+          }
+
+          if (entry.experimentLinks && entry.experimentLinks.length > 0) {
+            const expIds = entry.experimentLinks.map((link: any) => link.experiment.id);
+            setInitialExperimentIds(expIds);
+            setSelectedExperimentIds(expIds);
           }
         }
       } catch (err: any) {
@@ -88,6 +111,21 @@ export default function EditEntryPage() {
           tags,
         }),
       });
+
+      const currentSet = new Set(initialExperimentIds);
+      const targetSet = new Set(selectedExperimentIds);
+
+      const toDelete = [...currentSet].filter(x => !targetSet.has(x));
+      const toAdd = [...targetSet].filter(x => !currentSet.has(x));
+
+      await Promise.all([
+        ...toDelete.map(expId => 
+          apiFetch(`/experiments/${expId}/entries/${id}`, { method: "DELETE" }).catch(e => console.error(e))
+        ),
+        ...toAdd.map(expId =>
+          apiFetch(`/experiments/${expId}/link-entry`, { method: "POST", body: JSON.stringify({ entryId: id }) }).catch(e => console.error(e))
+        )
+      ]);
 
       router.back();
       router.refresh();
@@ -182,6 +220,49 @@ export default function EditEntryPage() {
             onChange={(e) => setTitle(e.target.value)}
             className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
           />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-[#8B8894] mb-1">
+            Linked Experiments (Optional)
+          </label>
+          <select
+            value=""
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val && !selectedExperimentIds.includes(val)) {
+                setSelectedExperimentIds([...selectedExperimentIds, val]);
+              }
+            }}
+            className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] focus:outline-none focus:border-[#C9A26D]"
+          >
+            <option value="">No experiment ▼</option>
+            {availableExperiments.map((exp) => (
+              <option key={exp.id} value={exp.id}>
+                [{exp.status}] {exp.problem}
+              </option>
+            ))}
+          </select>
+          {selectedExperimentIds.length > 0 && (
+            <div className="flex gap-2 flex-wrap mt-3">
+              {selectedExperimentIds.map((eid) => {
+                const exp = availableExperiments.find((e) => e.id === eid);
+                if (!exp) return null;
+                return (
+                  <div key={eid} className="flex items-center gap-2 bg-[#2A2934]/50 border border-[#2A2934] pl-2 pr-1 py-1 rounded-[4px] text-[11px] text-[#EDEAE3]">
+                    <span>{exp.problem}</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedExperimentIds((prev) => prev.filter((x) => x !== eid))}
+                      className="text-[#8B8894] hover:text-[#B0715A] transition-colors px-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api-client";
 
 export default function EditExperimentPage() {
@@ -23,6 +24,7 @@ export default function EditExperimentPage() {
   const [result, setResult] = useState("");
   const [lesson, setLesson] = useState("");
   const [nextAction, setNextAction] = useState("");
+  const [linkedEntries, setLinkedEntries] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadExperiment() {
@@ -41,6 +43,7 @@ export default function EditExperimentPage() {
           setResult(exp.result || "");
           setLesson(exp.lesson || "");
           setNextAction(exp.nextAction || "");
+          setLinkedEntries(exp.linkedEntries || []);
         }
       } catch (err: any) {
         setError(err.message || "Failed to load experiment");
@@ -89,6 +92,18 @@ export default function EditExperimentPage() {
       router.refresh();
     } catch (err: any) {
       setError(err.message || "Failed to delete experiment");
+      setSaving(false);
+    }
+  };
+
+  const handleUnlink = async (entryId: string) => {
+    try {
+      setSaving(true);
+      await apiFetch(`/experiments/${id}/entries/${entryId}`, { method: "DELETE" });
+      setLinkedEntries((prev) => prev.filter((link) => link.entryId !== entryId));
+    } catch (err: any) {
+      alert(err.message || "Failed to unlink entry");
+    } finally {
       setSaving(false);
     }
   };
@@ -224,6 +239,49 @@ export default function EditExperimentPage() {
               </select>
             </div>
           </div>
+        </section>
+
+        {/* Evidence Component */}
+        <section className="space-y-4">
+          <div className="border-b border-[#2A2934]/40 pb-1 flex items-center justify-between">
+            <h2 className="text-sm font-medium text-[#EDEAE3]">
+              Evidence
+            </h2>
+          </div>
+
+          {!linkedEntries || linkedEntries.length === 0 ? (
+            <div className="text-xs text-[#8B8894] py-2">No evidence linked yet.</div>
+          ) : (
+            <div className="space-y-4">
+              {linkedEntries.map((link) => {
+                const entry = link.entry;
+                const dStr = entry.occurredOn.split("T")[0];
+                return (
+                  <div key={entry.id} className="bg-[#1D1C22] border-l-2 border-[#5C5A66] rounded-r-[10px] p-4 space-y-2 relative group">
+                    <button
+                      type="button"
+                      onClick={() => handleUnlink(entry.id)}
+                      className="absolute top-4 right-4 text-[10px] text-[#8B8894] hover:text-[#B0715A] opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      Unlink
+                    </button>
+                    <Link
+                      href={`/entries/${entry.id}`}
+                      className="block hover:bg-[#2A2934]/30 -m-2 p-2 rounded-[6px] transition-colors"
+                    >
+                      <div className="text-xs font-medium text-[#EDEAE3] mb-1">
+                        {dStr} {entry.title ? <span className="font-normal text-[#8B8894]">| {entry.title}</span> : ""}
+                      </div>
+                      <div className="space-y-1 text-xs">
+                        {entry.intent && <p className="text-[#EDEAE3]"><span className="text-[#8B8894]">Intent:</span> {entry.intent}</p>}
+                        {entry.outcome && <p className="text-[#EDEAE3]"><span className="text-[#8B8894]">Outcome:</span> {entry.outcome}</p>}
+                      </div>
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Output Diagnostics Component */}

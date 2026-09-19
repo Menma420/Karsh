@@ -32,12 +32,27 @@ function RecordEntryForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [availableExperiments, setAvailableExperiments] = useState<any[]>([]);
+  const [selectedExperimentIds, setSelectedExperimentIds] = useState<string[]>([]);
+
   useEffect(() => {
     apiFetch("/settings")
       .then((res) => {
         if (res.settings) setSettings(res.settings);
       })
       .catch(() => {});
+
+    apiFetch("/experiments").then((res) => {
+      if (res.experiments) {
+         // Prioritize active/planned.
+         const sorted = [...res.experiments].sort((a: any, b: any) => {
+           if (a.status === "ACTIVE" && b.status !== "ACTIVE") return -1;
+           if (b.status === "ACTIVE" && a.status !== "ACTIVE") return 1;
+           return 0;
+         });
+         setAvailableExperiments(sorted);
+      }
+    }).catch(() => {});
   }, []);
 
   const calculateEarliestAllowed = () => {
@@ -59,7 +74,7 @@ function RecordEntryForm() {
         .map((t) => t.trim())
         .filter((t) => t.length > 0);
 
-      await apiFetch("/reflection-entries", {
+      const res = await apiFetch("/reflection-entries", {
         method: "POST",
         body: JSON.stringify({
           occurredOn,
@@ -76,6 +91,20 @@ function RecordEntryForm() {
           tags,
         }),
       });
+
+      const entryId = res.entry?.id;
+      if (entryId && selectedExperimentIds.length > 0) {
+        await Promise.all(
+          selectedExperimentIds.map((expId) =>
+            apiFetch(`/experiments/${expId}/link-entry`, {
+              method: "POST",
+              body: JSON.stringify({ entryId }),
+            }).catch((err) => {
+               console.error(`Failed linking to experiment ${expId}:`, err);
+            })
+          )
+        );
+      }
 
       router.push("/");
       router.refresh();
@@ -150,6 +179,49 @@ function RecordEntryForm() {
             placeholder="e.g. Debugging database connection leak"
             className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
           />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-[#8B8894] mb-1">
+            Link to Experiment (Optional)
+          </label>
+          <select
+            value=""
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val && !selectedExperimentIds.includes(val)) {
+                setSelectedExperimentIds([...selectedExperimentIds, val]);
+              }
+            }}
+            className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] focus:outline-none focus:border-[#C9A26D]"
+          >
+            <option value="">No experiment ▼</option>
+            {availableExperiments.map((exp) => (
+              <option key={exp.id} value={exp.id}>
+                [{exp.status}] {exp.problem}
+              </option>
+            ))}
+          </select>
+          {selectedExperimentIds.length > 0 && (
+            <div className="flex gap-2 flex-wrap mt-3">
+              {selectedExperimentIds.map((id) => {
+                const exp = availableExperiments.find((e) => e.id === id);
+                if (!exp) return null;
+                return (
+                  <div key={id} className="flex items-center gap-2 bg-[#2A2934]/50 border border-[#2A2934] pl-2 pr-1 py-1 rounded-[4px] text-[11px] text-[#EDEAE3]">
+                    <span>{exp.problem}</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedExperimentIds((prev) => prev.filter((x) => x !== id))}
+                      className="text-[#8B8894] hover:text-[#B0715A] transition-colors px-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">

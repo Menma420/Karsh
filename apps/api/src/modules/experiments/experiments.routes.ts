@@ -43,6 +43,19 @@ experimentsRouter.get("/", requireAuth, async (req: AuthenticatedRequest, res: R
         linkedEntries: { include: { entry: true } },
       },
     });
+
+    experiments.forEach(exp => {
+      exp.linkedEntries.sort((a, b) => {
+        const d1 = a.entry.occurredOn.getTime();
+        const d2 = b.entry.occurredOn.getTime();
+        if (d1 !== d2) return d1 - d2;
+        const t1 = a.entry.occurredAt?.getTime() || 0;
+        const t2 = b.entry.occurredAt?.getTime() || 0;
+        if (t1 !== t2) return t1 - t2;
+        return a.entry.createdAt.getTime() - b.entry.createdAt.getTime();
+      });
+    });
+
     return res.json({ experiments });
   } catch (err) {
     next(err);
@@ -60,6 +73,17 @@ experimentsRouter.get("/:id", requireAuth, async (req: AuthenticatedRequest, res
     if (!experiment) {
       return res.status(404).json({ error: { code: "NOT_FOUND", message: "Experiment not found" } });
     }
+    
+    experiment.linkedEntries.sort((a, b) => {
+      const d1 = a.entry.occurredOn.getTime();
+      const d2 = b.entry.occurredOn.getTime();
+      if (d1 !== d2) return d1 - d2;
+      const t1 = a.entry.occurredAt?.getTime() || 0;
+      const t2 = b.entry.occurredAt?.getTime() || 0;
+      if (t1 !== t2) return t1 - t2;
+      return a.entry.createdAt.getTime() - b.entry.createdAt.getTime();
+    });
+
     return res.json({ experiment });
   } catch (err) {
     next(err);
@@ -106,6 +130,29 @@ experimentsRouter.post("/:id/link-entry", requireAuth, async (req: Authenticated
 
     return res.json({ message: "Linked successfully" });
   } catch (err) {
+    next(err);
+  }
+});
+
+experimentsRouter.delete("/:id/entries/:entryId", requireAuth, async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const experiment = await prisma.experiment.findFirst({
+      where: { id: req.params.id, userId: req.userId! },
+    });
+    if (!experiment) return res.status(404).json({ error: { code: "NOT_FOUND", message: "Experiment not found" } });
+
+    const entry = await prisma.reflectionEntry.findFirst({
+      where: { id: req.params.entryId, userId: req.userId! },
+    });
+    if (!entry) return res.status(404).json({ error: { code: "NOT_FOUND", message: "Reflection entry not found" } });
+
+    await prisma.experimentEntryLink.delete({
+      where: { experimentId_entryId: { experimentId: experiment.id, entryId: entry.id } },
+    });
+
+    return res.json({ message: "Unlinked successfully" });
+  } catch (err: any) {
+    if (err.code === "P2025") return res.status(404).json({ error: { code: "NOT_FOUND", message: "Link not found" } });
     next(err);
   }
 });
