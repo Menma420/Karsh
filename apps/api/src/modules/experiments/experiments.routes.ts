@@ -109,3 +109,22 @@ experimentsRouter.post("/:id/link-entry", requireAuth, async (req: Authenticated
     next(err);
   }
 });
+
+experimentsRouter.delete("/:id", requireAuth, async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const existing = await prisma.experiment.findFirst({
+      where: { id: req.params.id, userId: req.userId! },
+    });
+    if (!existing) {
+      return res.status(404).json({ error: { code: "NOT_FOUND", message: "Experiment not found" } });
+    }
+    
+    await prisma.experiment.delete({
+      where: { id: existing.id }
+    });
+
+    return res.json({ message: "Experiment deleted successfully" });
+  } catch (err) {
+    next(err);
+  }
+});

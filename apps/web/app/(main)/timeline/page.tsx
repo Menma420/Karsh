@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api-client";
 
 export default function TimelinePage() {
@@ -102,83 +103,84 @@ export default function TimelinePage() {
             const createdDateStr = entry.createdAt.split("T")[0];
             const isBackfilled = occurredDateStr !== createdDateStr;
 
-            return (
-              <div
-                key={entry.id}
-                className="space-y-2 border-b border-[#2A2934]/40 pb-5 last:border-0"
-              >
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-xs font-mono font-medium text-[#C9A26D]">
-                      {occurredDateStr}
-                    </span>
-                    <h3 className="font-medium text-sm text-[#EDEAE3]">
-                      {entry.title || "Reflection Entry"}
-                    </h3>
-                  </div>
-
-                  {isBackfilled && (
-                    <span className="text-[10px] text-[#8B8894]">
-                      Recorded on {createdDateStr} via backfill
-                    </span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
-                  {entry.intent && (
-                    <div>
-                      <span className="text-[#5C5A66] block">Intent</span>
-                      <p className="text-[#EDEAE3] mt-0.5">{entry.intent}</p>
-                    </div>
-                  )}
-
-                  {entry.outcome && (
-                    <div>
-                      <span className="text-[#5C5A66] block">Outcome</span>
-                      <p className="text-[#EDEAE3] mt-0.5">{entry.outcome}</p>
-                    </div>
-                  )}
-
-                  {entry.wentWell && (
-                    <div>
-                      <span className="text-[#5C5A66] block">Went well</span>
-                      <p className="text-[#EDEAE3] mt-0.5">{entry.wentWell}</p>
-                    </div>
-                  )}
-
-                  {entry.struggle && (
-                    <div>
-                      <span className="text-[#5C5A66] block">Struggle</span>
-                      <p className="text-[#EDEAE3] mt-0.5">{entry.struggle}</p>
-                    </div>
-                  )}
-
-                  {entry.whyItHappened && (
-                    <div>
-                      <span className="text-[#5C5A66] block">Why it happened</span>
-                      <p className="text-[#EDEAE3] mt-0.5">{entry.whyItHappened}</p>
-                    </div>
-                  )}
-
-                  {entry.learned && (
-                    <div>
-                      <span className="text-[#C9A26D] block">Learned</span>
-                      <p className="text-[#EDEAE3] mt-0.5">{entry.learned}</p>
-                    </div>
-                  )}
-                </div>
-
-                {entry.tags && entry.tags.length > 0 && (
-                  <div className="flex items-center gap-2 pt-1 text-[11px] text-[#8B8894]">
-                    {entry.tags.map((t: any) => (
-                      <span key={t.tag.id} className="text-[#8B8894]">
-                        #{t.tag.name}
+              return (
+                <Link
+                  key={entry.id}
+                  href={`/entries/${entry.id}`}
+                  className="block space-y-2 border-b border-[#2A2934]/40 pb-5 pt-3 px-3 -mx-3 hover:bg-[#2A2934]/20 rounded-xl group transition-colors cursor-pointer last:border-0"
+                >
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-xs font-mono font-medium text-[#C9A26D]">
+                        {occurredDateStr}
                       </span>
-                    ))}
+                      <h3 className="font-medium text-sm text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors">
+                        {entry.title || "Reflection Entry"}
+                      </h3>
+                    </div>
+
+                    {isBackfilled && (
+                      <span className="text-[10px] text-[#8B8894]">
+                        Recorded on {createdDateStr} via backfill
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-            );
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                    {entry.intent && (
+                      <div>
+                        <span className="text-[#5C5A66] block">Intent</span>
+                        <p className="text-[#EDEAE3] mt-0.5">{entry.intent}</p>
+                      </div>
+                    )}
+
+                    {entry.outcome && (
+                      <div>
+                        <span className="text-[#5C5A66] block">Outcome</span>
+                        <p className="text-[#EDEAE3] mt-0.5">{entry.outcome}</p>
+                      </div>
+                    )}
+
+                    {entry.wentWell && (
+                      <div>
+                        <span className="text-[#5C5A66] block">Went well</span>
+                        <p className="text-[#EDEAE3] mt-0.5">{entry.wentWell}</p>
+                      </div>
+                    )}
+
+                    {entry.struggle && (
+                      <div>
+                        <span className="text-[#5C5A66] block">Struggle</span>
+                        <p className="text-[#EDEAE3] mt-0.5">{entry.struggle}</p>
+                      </div>
+                    )}
+
+                    {entry.whyItHappened && (
+                      <div>
+                        <span className="text-[#5C5A66] block">Why it happened</span>
+                        <p className="text-[#EDEAE3] mt-0.5">{entry.whyItHappened}</p>
+                      </div>
+                    )}
+
+                    {entry.learned && (
+                      <div>
+                        <span className="text-[#C9A26D] block">Learned</span>
+                        <p className="text-[#EDEAE3] mt-0.5">{entry.learned}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {entry.tags && entry.tags.length > 0 && (
+                    <div className="flex items-center gap-2 pt-1 text-[11px] text-[#8B8894]">
+                      {entry.tags.map((t: any) => (
+                        <span key={t.tag.id} className="text-[#8B8894]">
+                          #{t.tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </Link>
+              );
           })}
         </div>
       )}

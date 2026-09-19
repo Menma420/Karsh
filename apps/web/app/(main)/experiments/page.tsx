@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api-client";
 
 export default function ExperimentsPage() {
@@ -199,12 +200,13 @@ export default function ExperimentsPage() {
           {experiments.map((exp) => {
             const statusInfo = statusColors[exp.status] || statusColors.PLANNED;
             return (
-              <div
+              <Link
                 key={exp.id}
-                className="bg-[#1D1C22] border-l-2 border-[#C9A26D] rounded-r-[10px] p-5 space-y-3"
+                href={`/experiments/${exp.id}`}
+                className="block bg-[#1D1C22] border-l-2 border-[#C9A26D] rounded-r-[10px] p-5 space-y-3 hover:bg-[#2A2934]/60 transition-colors cursor-pointer group"
               >
                 <div className="flex items-center justify-between border-b border-[#2A2934]/40 pb-2">
-                  <h3 className="font-medium text-sm text-[#EDEAE3]">{exp.problem}</h3>
+                  <h3 className="font-medium text-sm text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors">{exp.problem}</h3>
                   <span className={`text-xs ${statusInfo.textClass}`}>
                     {statusInfo.label}
                   </span>
@@ -216,7 +218,7 @@ export default function ExperimentsPage() {
                   <p className="text-[#EDEAE3]"><span className="text-[#8B8894]">Measurement:</span> {exp.measurement}</p>
                   {exp.result && <p className="text-[#C9A26D]"><span className="text-[#8B8894]">Result:</span> {exp.result}</p>}
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

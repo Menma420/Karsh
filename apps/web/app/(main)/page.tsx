@@ -64,6 +64,14 @@ export default function DashboardPage() {
     groupedCapabilities[cap.level].push(cap);
   });
 
+  if (loading) {
+    return (
+      <div className="pt-20 pb-12 flex items-center justify-center">
+        <p className="text-sm text-[#8B8894] animate-pulse">Loading OS state...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-14 pt-4 pb-12">
       {/* Weight 1 — Hero (No Card, directly on page background) */}
@@ -91,24 +99,40 @@ export default function DashboardPage() {
             <span className="text-xs text-[#8B8894] font-medium block mb-1">
               Current focus
             </span>
-            <h2 className="text-2xl sm:text-3xl font-display font-medium text-[#EDEAE3] leading-snug max-w-2xl">
-              System Reliability &amp; Capability OS Core Loop
-            </h2>
-            <p className="text-xs text-[#8B8894] mt-2 max-w-xl leading-relaxed">
-              Establishing strict evidence-based tracking, date boundaries, and clean prompt bundle generation.
-            </p>
+            {activeExperiment ? (
+              <>
+                <h2 className="text-2xl sm:text-3xl font-display font-medium text-[#EDEAE3] leading-snug max-w-2xl">
+                  {activeExperiment.problem}
+                </h2>
+                <p className="text-xs text-[#8B8894] mt-2 max-w-xl leading-relaxed">
+                  {activeExperiment.hypothesis}
+                </p>
+              </>
+            ) : (
+              <h2 className="text-xl font-display text-[#8B8894] italic leading-snug max-w-xl">
+                No active focus
+              </h2>
+            )}
           </div>
 
           <div className="pt-2">
             <span className="text-xs text-[#8B8894] font-medium block mb-0.5">
               This week&apos;s bottleneck
             </span>
-            <p className="text-sm text-[#EDEAE3] font-medium">
-              {bottleneck ? `${bottleneck.name} (${bottleneck.latestAssessment.score}/10)` : "Software / backend engineering"}
-            </p>
-            <p className="text-xs text-[#8B8894] mt-0.5">
-              {bottleneck?.latestAssessment?.observations?.[0] || "Primary constraint on engineering output leverage."}
-            </p>
+            {bottleneck ? (
+              <>
+                <p className="text-sm text-[#EDEAE3] font-medium">
+                  {bottleneck.name} ({bottleneck.latestAssessment.score}/10)
+                </p>
+                <p className="text-xs text-[#8B8894] mt-0.5">
+                  {bottleneck.latestAssessment.observations?.[0] || "No observation recorded."}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-[#8B8894] italic">
+                No structural bottlenecks currently assessed.
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -119,32 +143,40 @@ export default function DashboardPage() {
           This week&apos;s experiment
         </span>
 
-        <div className="bg-[#1D1C22] border-l-2 border-[#C9A26D] rounded-r-[10px] p-4 sm:p-5 space-y-3">
-          <div className="flex items-center justify-between gap-4">
-            <h3 className="text-sm font-medium text-[#EDEAE3]">
-              {activeExperiment ? activeExperiment.problem : "Strict Server-Side Backfill Validation"}
-            </h3>
-            <span className="text-xs text-[#7A9B7E] flex items-center gap-1.5 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#7A9B7E]" />
-              <span>Active</span>
-            </span>
-          </div>
+        {activeExperiment ? (
+          <Link
+            href={`/experiments/${activeExperiment.id}`}
+            className="block bg-[#1D1C22] border-l-2 border-[#C9A26D] rounded-r-[10px] p-4 sm:p-5 space-y-3 hover:bg-[#2A2934]/60 transition-colors cursor-pointer group"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="text-sm font-medium text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors">
+                {activeExperiment.problem}
+              </h3>
+              <span className="text-xs text-[#7A9B7E] flex items-center gap-1.5 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#7A9B7E]" />
+                <span>Active</span>
+              </span>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div>
-              <span className="text-[#8B8894] block">Problem</span>
-              <p className="text-[#EDEAE3] mt-0.5">
-                {activeExperiment ? activeExperiment.hypothesis : "Unconstrained date entries create distorted evidence chronology."}
-              </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <span className="text-[#8B8894] block">Problem</span>
+                <p className="text-[#EDEAE3] mt-0.5">{activeExperiment.problem}</p>
+              </div>
+              <div>
+                <span className="text-[#8B8894] block">Intervention</span>
+                <p className="text-[#EDEAE3] mt-0.5">{activeExperiment.intervention}</p>
+              </div>
             </div>
-            <div>
-              <span className="text-[#8B8894] block">Intervention</span>
-              <p className="text-[#EDEAE3] mt-0.5">
-                {activeExperiment ? activeExperiment.intervention : "Enforcing [today − backfillDays, today] boundary checks."}
-              </p>
-            </div>
+          </Link>
+        ) : (
+          <div className="bg-[#1D1C22]/40 border-l-2 border-[#2A2934] rounded-r-[10px] p-4 sm:p-5 text-center">
+            <p className="text-sm text-[#5C5A66] italic mb-1.5">No active experiment.</p>
+            <Link href="/experiments" className="text-xs text-[#8B8894] hover:text-[#EDEAE3] underline underline-offset-4">
+              Review history or draft a new experiment &rarr;
+            </Link>
           </div>
-        </div>
+        )}
       </section>
 
       {/* Weight 3 — Quiet / Empty State (Unboxed, left-aligned) */}
@@ -186,33 +218,34 @@ export default function DashboardPage() {
                 minute: "2-digit",
               });
               return (
-                <div
+                <Link
                   key={entry.id}
-                  className="space-y-1 pb-3 border-b border-[#2A2934]/30 last:border-0 transition-opacity duration-200"
+                  href={`/entries/${entry.id}`}
+                  className="block space-y-1 pb-3 px-2 -mx-2 hover:bg-[#2A2934]/30 rounded-lg group transition-colors"
                 >
                   <div className="flex items-baseline gap-3">
-                    <span className="text-xs font-mono text-[#5C5A66]">{timeStr}</span>
-                    <h3 className="text-sm font-medium text-[#EDEAE3]">
+                    <span className="text-xs font-mono text-[#5C5A66] group-hover:text-[#8B8894] max-w-[40px]">{timeStr}</span>
+                    <h3 className="text-sm font-medium text-[#EDEAE3] group-hover:text-[#C9A26D]">
                       {entry.title || "Reflection Entry"}
                     </h3>
                   </div>
 
                   {entry.intent && (
-                    <p className="text-xs text-[#8B8894] pl-11">
+                    <p className="text-xs text-[#8B8894] pl-[52px]">
                       <span className="text-[#5C5A66]">Intent:</span> {entry.intent}
                     </p>
                   )}
                   {entry.outcome && (
-                    <p className="text-xs text-[#8B8894] pl-11">
+                    <p className="text-xs text-[#8B8894] pl-[52px]">
                       <span className="text-[#5C5A66]">Outcome:</span> {entry.outcome}
                     </p>
                   )}
                   {entry.learned && (
-                    <p className="text-xs text-[#C9A26D] pl-11">
+                    <p className="text-xs text-[#C9A26D] pl-[52px]">
                       <span className="text-[#8B8894]">Learned:</span> {entry.learned}
                     </p>
                   )}
-                </div>
+                </Link>
               );
             })}
           </div>
