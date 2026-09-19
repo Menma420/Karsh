@@ -97,14 +97,24 @@ export const WeeklyReviewSchema = z.object({
   periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   answers: z.record(z.string()),
-});
+}).refine(data => {
+  const start = new Date(data.periodStart);
+  const end = new Date(data.periodEnd);
+  const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+  return diffDays >= 0 && diffDays <= 7;
+}, { message: "Weekly review period cannot exceed 7 days", path: ["periodEnd"] });
 export type WeeklyReviewInput = z.infer<typeof WeeklyReviewSchema>;
 
 export const MonthlyReviewSchema = z.object({
   periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   answers: z.record(z.string()),
-});
+}).refine(data => {
+  const start = new Date(data.periodStart);
+  const end = new Date(data.periodEnd);
+  const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+  return diffDays >= 0 && diffDays <= 31;
+}, { message: "Monthly review period cannot exceed 31 days", path: ["periodEnd"] });
 export type MonthlyReviewInput = z.infer<typeof MonthlyReviewSchema>;
 
 // --- AI Review Package Request ---

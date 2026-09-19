@@ -38,6 +38,21 @@ export default function ReviewsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const s = new Date(periodStart);
+    const end = new Date(periodEnd);
+    const diff = (end.getTime() - s.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (activeTab === "weekly" && (diff > 7 || diff < 0)) {
+      alert("Weekly review period cannot exceed 7 days.");
+      return;
+    }
+
+    if (activeTab === "monthly" && (diff > 31 || diff < 0)) {
+      alert("Monthly review period cannot exceed 31 days.");
+      return;
+    }
+
     try {
       const endpoint = activeTab === "weekly" ? "/reviews/weekly" : "/reviews/monthly";
       await apiFetch(endpoint, {
