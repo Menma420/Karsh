@@ -37,8 +37,7 @@ aiRouter.post("/validate-assessment", requireAuth, async (req: AuthenticatedRequ
     const { rawResponse } = req.body;
     if (!rawResponse || typeof rawResponse !== "string") {
       return res.status(400).json({
-        valid: false,
-        errors: ["Raw response text is required."],
+        error: { code: "BAD_REQUEST", message: "Raw response text is required." }
       });
     }
 
@@ -51,8 +50,7 @@ aiRouter.post("/validate-assessment", requireAuth, async (req: AuthenticatedRequ
       parsed = JSON.parse(cleanedJson);
     } catch (e: any) {
       return res.status(422).json({
-        valid: false,
-        errors: [`Malformed JSON syntax: ${e.message}`],
+        error: { code: "MALFORMED_JSON", message: "Malformed JSON syntax", details: [e.message] }
       });
     }
 
@@ -63,8 +61,7 @@ aiRouter.post("/validate-assessment", requireAuth, async (req: AuthenticatedRequ
         (err) => `${err.path.join(".")}: ${err.message}`
       );
       return res.status(422).json({
-        valid: false,
-        errors: fieldErrors,
+        error: { code: "VALIDATION_FAILED", message: "Invalid payload format", details: fieldErrors }
       });
     }
 
@@ -86,10 +83,11 @@ aiRouter.post("/validate-assessment", requireAuth, async (req: AuthenticatedRequ
 
     if (unknownCapabilities.length > 0) {
       return res.status(422).json({
-        valid: false,
-        errors: [
-          `Unknown capabilities not present in taxonomy: ${unknownCapabilities.join(", ")}`,
-        ],
+        error: { 
+          code: "UNKNOWN_CAPABILITY", 
+          message: "Unknown capabilities not present in taxonomy", 
+          details: unknownCapabilities 
+        }
       });
     }
 

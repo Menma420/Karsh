@@ -27,7 +27,9 @@ export default function ImportAIAssessmentPage() {
     } catch (err: any) {
       setValidationResult({
         valid: false,
-        errors: [err.message || "Failed to validate raw response"],
+        errors: err.details && err.details.length > 0 
+          ? err.details 
+          : [err.message || "Failed to validate raw response"],
       });
     } finally {
       setValidating(false);
