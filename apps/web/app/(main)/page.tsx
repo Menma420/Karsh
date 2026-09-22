@@ -100,15 +100,12 @@ export default function DashboardPage() {
               Current focus
             </span>
             {activeExperiments.length > 0 ? (
-              <div className="space-y-6">
+              <div className="space-y-3">
                 {activeExperiments.map((exp: any) => (
                   <div key={`focus-${exp.id}`}>
-                    <h2 className="text-2xl sm:text-3xl font-display font-medium text-[#EDEAE3] leading-snug max-w-2xl">
-                      {exp.problem}
+                    <h2 className="text-xl sm:text-2xl font-display font-medium text-[#EDEAE3] leading-snug">
+                      {exp.title || exp.problem}
                     </h2>
-                    <p className="text-xs text-[#8B8894] mt-2 max-w-xl leading-relaxed">
-                      {exp.hypothesis}
-                    </p>
                   </div>
                 ))}
               </div>
@@ -124,14 +121,9 @@ export default function DashboardPage() {
               This week&apos;s bottleneck
             </span>
             {bottleneck ? (
-              <>
-                <p className="text-sm text-[#EDEAE3] font-medium">
-                  {bottleneck.name} ({bottleneck.latestAssessment.score}/10)
-                </p>
-                <p className="text-xs text-[#8B8894] mt-0.5">
-                  {bottleneck.latestAssessment.observations?.[0] || "No observation recorded."}
-                </p>
-              </>
+              <p className="text-sm text-[#EDEAE3] font-medium">
+                {bottleneck.name} ({bottleneck.latestAssessment.score}/10)
+              </p>
             ) : (
               <p className="text-sm text-[#8B8894] italic">
                 No structural bottlenecks currently assessed.
@@ -141,40 +133,27 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Weight 2 — Active Strip (Left-edge accent bar, subtle surface fill) */}
+      {/* Weight 2 — Active Strip (Minimal Single-line Bar) */}
       <section className="space-y-2">
         <span className="text-xs text-[#8B8894] font-medium block">
           This week&apos;s experiment{activeExperiments.length !== 1 ? 's' : ''}
         </span>
 
         {activeExperiments.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {activeExperiments.map((exp: any) => (
               <Link
                 key={exp.id}
                 href={`/experiments/${exp.id}`}
-                className="block bg-[#1D1C22] border-l-2 border-[#C9A26D] rounded-r-[10px] p-4 sm:p-5 space-y-3 hover:bg-[#2A2934]/60 transition-colors cursor-pointer group"
+                className="flex items-center justify-between bg-[#1D1C22] border-l-2 border-[#C9A26D] rounded-r-[10px] px-4 py-3.5 hover:bg-[#2A2934]/60 transition-colors cursor-pointer group"
               >
-                <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-sm font-medium text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors">
-                    {exp.problem}
-                  </h3>
-                  <span className="text-xs text-[#7A9B7E] flex items-center gap-1.5 shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#7A9B7E]" />
-                    <span>Active</span>
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <span className="text-[#8B8894] block">Problem</span>
-                    <p className="text-[#EDEAE3] mt-0.5">{exp.problem}</p>
-                  </div>
-                  <div>
-                    <span className="text-[#8B8894] block">Intervention</span>
-                    <p className="text-[#EDEAE3] mt-0.5">{exp.intervention}</p>
-                  </div>
-                </div>
+                <h3 className="text-sm font-medium text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors line-clamp-1">
+                  {exp.title || exp.problem}
+                </h3>
+                <span className="text-xs text-[#7A9B7E] flex items-center gap-1.5 shrink-0 ml-4">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#7A9B7E]" />
+                  <span>Active</span>
+                </span>
               </Link>
             ))}
           </div>
