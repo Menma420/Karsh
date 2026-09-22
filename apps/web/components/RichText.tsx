@@ -48,10 +48,11 @@ export function RichText({ text, className = "" }: RichTextProps) {
   };
 
   for (const line of lines) {
-    const bulletMatch = line.match(/^[\-\*•]\s+(.*)/);
-    if (bulletMatch) {
+    const trimmed = line.trim();
+    const bulletMatch = trimmed.match(/^[\-\*•]\s*(.+)/);
+    if (bulletMatch && bulletMatch[1].trim().length > 0) {
       flushParagraph();
-      currentBullets.push(bulletMatch[1]);
+      currentBullets.push(bulletMatch[1].trim());
     } else {
       flushBullets();
       paragraphLines.push(line);
