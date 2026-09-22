@@ -12,6 +12,7 @@ decisionsRouter.post("/", requireAuth, async (req: AuthenticatedRequest, res: Re
       data: {
         userId: req.userId!,
         date: new Date(body.date + "T00:00:00.000Z"),
+        title: body.title,
         decision: body.decision,
         context: body.context,
         options: body.options ? body.options : undefined,

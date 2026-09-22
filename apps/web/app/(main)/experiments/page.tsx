@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api-client";
+import { TextFieldModal } from "@/components/TextFieldModal";
 
 export default function ExperimentsPage() {
   const [experiments, setExperiments] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [title, setTitle] = useState("");
   const [problem, setProblem] = useState("");
   const [hypothesis, setHypothesis] = useState("");
   const [intervention, setIntervention] = useState("");
@@ -38,6 +40,7 @@ export default function ExperimentsPage() {
       await apiFetch("/experiments", {
         method: "POST",
         body: JSON.stringify({
+          title: title.trim() || null,
           problem,
           hypothesis,
           intervention,
@@ -47,6 +50,7 @@ export default function ExperimentsPage() {
         }),
       });
       setShowModal(false);
+      setTitle("");
       setProblem("");
       setHypothesis("");
       setIntervention("");
@@ -86,58 +90,53 @@ export default function ExperimentsPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-[#16151A]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#1D1C22] border border-[#2A2934] w-full max-w-lg rounded-[10px] p-6 space-y-4">
+          <div className="bg-[#1D1C22] border border-[#2A2934] w-full max-w-xl rounded-[10px] p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-base font-display font-medium text-[#EDEAE3]">Plan new capability experiment</h2>
-            <form onSubmit={handleCreate} className="space-y-3 text-xs">
+            <form onSubmit={handleCreate} className="space-y-4 text-xs">
               <div>
-                <label className="block font-medium text-[#8B8894] mb-1">Problem to solve</label>
+                <label className="block font-medium text-[#8B8894] mb-1">Experiment Title (Optional short summary)</label>
                 <input
                   type="text"
-                  required
-                  value={problem}
-                  onChange={(e) => setProblem(e.target.value)}
-                  placeholder="e.g. Context switching during deep engineering blocks"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Deep Work Focus Protocol"
                   className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-2 text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
                 />
               </div>
 
-              <div>
-                <label className="block font-medium text-[#8B8894] mb-1">Hypothesis</label>
-                <textarea
-                  rows={2}
-                  required
-                  value={hypothesis}
-                  onChange={(e) => setHypothesis(e.target.value)}
-                  placeholder="If I apply X, then Y will improve because..."
-                  className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-2 text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
-                />
-              </div>
+              <TextFieldModal
+                label="Problem to solve"
+                value={problem}
+                onChange={setProblem}
+                placeholder="Describe the context switching or bottleneck problem in detail..."
+                required
+              />
 
-              <div>
-                <label className="block font-medium text-[#8B8894] mb-1">Intervention</label>
-                <textarea
-                  rows={2}
-                  required
-                  value={intervention}
-                  onChange={(e) => setIntervention(e.target.value)}
-                  placeholder="Specific action protocol to test..."
-                  className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-2 text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
-                />
-              </div>
+              <TextFieldModal
+                label="Hypothesis"
+                value={hypothesis}
+                onChange={setHypothesis}
+                placeholder="If I apply protocol X, outcome Y will improve because..."
+                required
+              />
 
-              <div>
-                <label className="block font-medium text-[#8B8894] mb-1">Measurement method</label>
-                <input
-                  type="text"
-                  required
-                  value={measurement}
-                  onChange={(e) => setMeasurement(e.target.value)}
-                  placeholder="How success will be objectively verified..."
-                  className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-2 text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
-                />
-              </div>
+              <TextFieldModal
+                label="Intervention"
+                value={intervention}
+                onChange={setIntervention}
+                placeholder="Specific action protocol to test (e.g. 90-min uninterrupted blocks with phone in another room)..."
+                required
+              />
 
-              <div className="grid grid-cols-2 gap-3">
+              <TextFieldModal
+                label="Measurement method"
+                value={measurement}
+                onChange={setMeasurement}
+                placeholder="How success will be objectively verified..."
+                required
+              />
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
                 <div>
                   <label className="block font-medium text-[#8B8894] mb-1">Start date</label>
                   <input
@@ -163,7 +162,7 @@ export default function ExperimentsPage() {
                 </div>
               </div>
 
-              <div className="pt-3 flex justify-end gap-3">
+              <div className="pt-3 flex justify-end gap-3 border-t border-[#2A2934]/40">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
@@ -199,6 +198,7 @@ export default function ExperimentsPage() {
         <div className="space-y-4">
           {experiments.map((exp) => {
             const statusInfo = statusColors[exp.status] || statusColors.PLANNED;
+            const displayTitle = exp.title || exp.problem;
             return (
               <Link
                 key={exp.id}
@@ -206,17 +206,33 @@ export default function ExperimentsPage() {
                 className="block bg-[#1D1C22] border-l-2 border-[#C9A26D] rounded-r-[10px] p-5 space-y-3 hover:bg-[#2A2934]/60 transition-colors cursor-pointer group"
               >
                 <div className="flex items-center justify-between border-b border-[#2A2934]/40 pb-2">
-                  <h3 className="font-medium text-sm text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors">{exp.problem}</h3>
-                  <span className={`text-xs ${statusInfo.textClass}`}>
+                  <h3 className="font-medium text-sm text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors line-clamp-1">{displayTitle}</h3>
+                  <span className={`text-xs ${statusInfo.textClass} shrink-0`}>
                     {statusInfo.label}
                   </span>
                 </div>
 
-                <div className="space-y-1.5 text-xs">
-                  <p className="text-[#EDEAE3]"><span className="text-[#8B8894]">Hypothesis:</span> {exp.hypothesis}</p>
-                  <p className="text-[#EDEAE3]"><span className="text-[#8B8894]">Intervention:</span> {exp.intervention}</p>
-                  <p className="text-[#EDEAE3]"><span className="text-[#8B8894]">Measurement:</span> {exp.measurement}</p>
-                  {exp.result && <p className="text-[#C9A26D]"><span className="text-[#8B8894]">Result:</span> {exp.result}</p>}
+                <div className="space-y-2 text-xs">
+                  {exp.title && (
+                    <div className="text-[#EDEAE3]">
+                      <span className="text-[#8B8894]">Problem:</span>
+                      <p className="whitespace-pre-wrap mt-0.5 font-mono text-[11px] text-[#EDEAE3]/90">{exp.problem}</p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-[#8B8894]">Hypothesis:</span>
+                    <p className="whitespace-pre-wrap mt-0.5 font-mono text-[11px] text-[#EDEAE3]/90">{exp.hypothesis}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#8B8894]">Intervention:</span>
+                    <p className="whitespace-pre-wrap mt-0.5 font-mono text-[11px] text-[#EDEAE3]/90">{exp.intervention}</p>
+                  </div>
+                  {exp.result && (
+                    <div>
+                      <span className="text-[#C9A26D]">Result:</span>
+                      <p className="whitespace-pre-wrap mt-0.5 font-mono text-[11px] text-[#C9A26D]/90">{exp.result}</p>
+                    </div>
+                  )}
                 </div>
               </Link>
             );

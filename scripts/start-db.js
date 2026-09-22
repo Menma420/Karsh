@@ -6,7 +6,35 @@ const port = process.env.DB_PORT || 5439;
 const dbName = process.env.DB_NAME || 'capability_os';
 const dataDir = path.join(__dirname, '../.pgdata');
 
+const net = require('net');
+
+function isPortInUse(port) {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    socket.setTimeout(500);
+    socket.on('connect', () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.on('timeout', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.on('error', () => {
+      resolve(false);
+    });
+    socket.connect(port, '127.0.0.1');
+  });
+}
+
 async function main() {
+  const inUse = await isPortInUse(Number(port));
+  if (inUse) {
+    console.log(`PostgreSQL is already running on port ${port}. Skipping re-initialization.`);
+    setInterval(() => {}, 1000);
+    return;
+  }
+
   if (fs.existsSync(dataDir)) {
     fs.rmSync(dataDir, { recursive: true, force: true });
   }

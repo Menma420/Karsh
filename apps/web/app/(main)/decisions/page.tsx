@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api-client";
+import { TextFieldModal } from "@/components/TextFieldModal";
 
 export default function DecisionsPage() {
   const [decisions, setDecisions] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [title, setTitle] = useState("");
   const [decisionText, setDecisionText] = useState("");
   const [context, setContext] = useState("");
   const [reasoning, setReasoning] = useState("");
@@ -38,6 +40,7 @@ export default function DecisionsPage() {
         method: "POST",
         body: JSON.stringify({
           date,
+          title: title.trim() || null,
           decision: decisionText,
           context: context || null,
           reasoning: reasoning || null,
@@ -46,6 +49,7 @@ export default function DecisionsPage() {
         }),
       });
       setShowModal(false);
+      setTitle("");
       setDecisionText("");
       setContext("");
       setReasoning("");
@@ -78,55 +82,50 @@ export default function DecisionsPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-[#16151A]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#1D1C22] border border-[#2A2934] w-full max-w-lg rounded-[10px] p-6 space-y-4">
+          <div className="bg-[#1D1C22] border border-[#2A2934] w-full max-w-xl rounded-[10px] p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-base font-display font-medium text-[#EDEAE3]">Record decision log</h2>
-            <form onSubmit={handleCreate} className="space-y-3 text-xs">
+            <form onSubmit={handleCreate} className="space-y-4 text-xs">
               <div>
-                <label className="block font-medium text-[#8B8894] mb-1">Decision made</label>
+                <label className="block font-medium text-[#8B8894] mb-1">Decision Title (Optional short summary)</label>
                 <input
                   type="text"
-                  required
-                  value={decisionText}
-                  onChange={(e) => setDecisionText(e.target.value)}
-                  placeholder="e.g. Migrate database scripts to local embedded PostgreSQL"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Postgres DB Migration"
                   className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-2 text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
                 />
               </div>
 
-              <div>
-                <label className="block font-medium text-[#8B8894] mb-1">Context &amp; constraints</label>
-                <textarea
-                  rows={2}
-                  value={context}
-                  onChange={(e) => setContext(e.target.value)}
-                  placeholder="Why this decision was necessary..."
-                  className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-2 text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
-                />
-              </div>
+              <TextFieldModal
+                label="Decision made"
+                value={decisionText}
+                onChange={setDecisionText}
+                placeholder="Describe the exact decision taken in full detail..."
+                required
+              />
 
-              <div>
-                <label className="block font-medium text-[#8B8894] mb-1">Reasoning / tradeoffs</label>
-                <textarea
-                  rows={2}
-                  value={reasoning}
-                  onChange={(e) => setReasoning(e.target.value)}
-                  placeholder="Rationale, alternatives rejected..."
-                  className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-2 text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
-                />
-              </div>
+              <TextFieldModal
+                label="Context & constraints"
+                value={context}
+                onChange={setContext}
+                placeholder="Why this decision was necessary, key constraints..."
+              />
 
-              <div>
-                <label className="block font-medium text-[#8B8894] mb-1">Expected outcome</label>
-                <input
-                  type="text"
-                  value={expectedOutcome}
-                  onChange={(e) => setExpectedOutcome(e.target.value)}
-                  placeholder="What success looks like..."
-                  className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-2 text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
-                />
-              </div>
+              <TextFieldModal
+                label="Reasoning / tradeoffs"
+                value={reasoning}
+                onChange={setReasoning}
+                placeholder="Rationale, alternatives considered and rejected..."
+              />
 
-              <div className="grid grid-cols-2 gap-3">
+              <TextFieldModal
+                label="Expected outcome"
+                value={expectedOutcome}
+                onChange={setExpectedOutcome}
+                placeholder="What success looks like, expected metrics..."
+              />
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
                 <div>
                   <label className="block font-medium text-[#8B8894] mb-1">Date</label>
                   <input
@@ -150,7 +149,7 @@ export default function DecisionsPage() {
                 </div>
               </div>
 
-              <div className="pt-3 flex justify-end gap-3">
+              <div className="pt-3 flex justify-end gap-3 border-t border-[#2A2934]/40">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
@@ -178,23 +177,47 @@ export default function DecisionsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {decisions.map((dec) => (
-            <div key={dec.id} className="border-b border-[#2A2934]/40 pb-4 space-y-2">
-              <div className="flex items-baseline justify-between gap-4">
-                <h3 className="font-medium text-sm text-[#EDEAE3]">{dec.decision}</h3>
-                <div className="flex items-center gap-3 text-xs text-[#8B8894] shrink-0">
-                  <span>{dec.date.split("T")[0]}</span>
-                  <span className="font-mono text-[#C9A26D]">Confidence: {dec.confidence}/10</span>
+          {decisions.map((dec) => {
+            const displayTitle = dec.title || dec.decision;
+            return (
+              <div key={dec.id} className="border-b border-[#2A2934]/40 pb-4 space-y-2 bg-[#1D1C22]/30 p-4 rounded-[8px]">
+                <div className="flex items-baseline justify-between gap-4">
+                  <h3 className="font-medium text-sm text-[#EDEAE3]">{displayTitle}</h3>
+                  <div className="flex items-center gap-3 text-xs text-[#8B8894] shrink-0">
+                    <span>{dec.date.split("T")[0]}</span>
+                    <span className="font-mono text-[#C9A26D]">Confidence: {dec.confidence}/10</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-xs pt-1">
+                  {dec.title && (
+                    <div>
+                      <span className="text-[#8B8894]">Decision:</span>
+                      <p className="whitespace-pre-wrap font-mono text-[11px] text-[#EDEAE3]/90 mt-0.5">{dec.decision}</p>
+                    </div>
+                  )}
+                  {dec.context && (
+                    <div>
+                      <span className="text-[#8B8894]">Context:</span>
+                      <p className="whitespace-pre-wrap font-mono text-[11px] text-[#EDEAE3]/90 mt-0.5">{dec.context}</p>
+                    </div>
+                  )}
+                  {dec.reasoning && (
+                    <div>
+                      <span className="text-[#8B8894]">Reasoning:</span>
+                      <p className="whitespace-pre-wrap font-mono text-[11px] text-[#EDEAE3]/90 mt-0.5">{dec.reasoning}</p>
+                    </div>
+                  )}
+                  {dec.expectedOutcome && (
+                    <div>
+                      <span className="text-[#8B8894]">Expected outcome:</span>
+                      <p className="whitespace-pre-wrap font-mono text-[11px] text-[#EDEAE3]/90 mt-0.5">{dec.expectedOutcome}</p>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              <div className="space-y-1 text-xs">
-                {dec.context && <p className="text-[#EDEAE3]"><span className="text-[#8B8894]">Context:</span> {dec.context}</p>}
-                {dec.reasoning && <p className="text-[#EDEAE3]"><span className="text-[#8B8894]">Reasoning:</span> {dec.reasoning}</p>}
-                {dec.expectedOutcome && <p className="text-[#EDEAE3]"><span className="text-[#8B8894]">Expected outcome:</span> {dec.expectedOutcome}</p>}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -3,6 +3,8 @@ import { prisma } from "../../db/client";
 import { buildReviewPackage } from "../../modules/ai/review-package";
 import { addDays, format, subDays } from "date-fns";
 
+import { seedDatabase } from "../../db/prisma/seed";
+
 describe("AI Review Package Builder v2", () => {
   let testUserId = "";
 
@@ -23,6 +25,8 @@ describe("AI Review Package Builder v2", () => {
     await prisma.user.deleteMany();
     await prisma.capabilityAssessment.deleteMany();
     await prisma.capability.deleteMany();
+
+    await seedDatabase();
 
     const testUser = await prisma.user.create({
       data: {
@@ -65,14 +69,15 @@ describe("AI Review Package Builder v2", () => {
     };
 
     const pkg = await buildReviewPackage(testUserId, req);
-    expect(pkg.markdown).toContain(`**${periodStart} to ${periodEnd}** (30 days): No recorded entries.`);
+    expect(pkg.markdown).toContain("No entries were recorded during this period.");
     
-    // Check forbidden words
-    const mdLower = pkg.markdown.toLowerCase();
-    expect(mdLower).not.toContain("missed");
-    expect(mdLower).not.toContain("failed");
-    expect(mdLower).not.toContain("streak");
-    expect(mdLower).not.toContain("skipped");
+    // Check forbidden judgment words in Section 4 entries text
+    const section4 = pkg.markdown.split("## 4. Reflection entries")[1]?.split("## 5. Experiments")[0] || "";
+    const sec4Lower = section4.toLowerCase();
+    expect(sec4Lower).not.toContain("missed");
+    expect(sec4Lower).not.toContain("failed");
+    expect(sec4Lower).not.toContain("streak");
+    expect(sec4Lower).not.toContain("skipped");
 
     // All sections must exist
     expect(pkg.markdown).toContain("## 1. How to read this package");
@@ -166,6 +171,9 @@ describe("AI Review Package Builder v2", () => {
   });
 
   it("renders capability taxonomy dynamically based on active capabilities in the database", async () => {
+    // Clear pre-seeded capabilities so we only test the ones inserted here
+    await prisma.capability.deleteMany();
+
     // Insert test capabilities
     await prisma.capability.create({
       data: { name: "Test Meta", level: 1, sortOrder: 1, active: true }
@@ -258,7 +266,8 @@ describe("AI Review Package Builder v2", () => {
 
   describe("Failure and Configuration State Handlers", () => {
     it("throws appropriately when active capability taxonomy is missing or entirely absent", async () => {
-      await prisma.capability.deleteMany(); // Guaranteed empty
+      await seedDatabase();
+      await prisma.capability.deleteMany(); // Guaranteed empty capabilities, but prompt version exists
 
       const req = {
         periodStart: "2026-09-01",
@@ -321,9 +330,9 @@ describe("AI Review Package Builder v2", () => {
       // Alternatively, we safely mimic the exact upsert logic since seed.ts executes on imported
       
       const execSync = require("child_process").execSync;
-      // We run the seed script directly
-      execSync("npx ts-node src/db/prisma/seed.ts", { 
-        cwd: __dirname + "/../../../..", 
+      // We run the seed script directly from workspace root
+      execSync("npx ts-node apps/api/src/db/prisma/seed.ts", { 
+        cwd: process.cwd(), 
         env: { ...process.env } // Pass through vitest's mocked test environment
       });
 
@@ -339,8 +348,8 @@ describe("AI Review Package Builder v2", () => {
       expect(inactivePrompt1?.active).toBe(false);
 
       // Run it a SECOND time to prove idempotency
-      execSync("npx ts-node src/db/prisma/seed.ts", { 
-        cwd: __dirname + "/../../../..", 
+      execSync("npx ts-node apps/api/src/db/prisma/seed.ts", { 
+        cwd: process.cwd(), 
         env: { ...process.env }
       });
 

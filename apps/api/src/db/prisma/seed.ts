@@ -57,9 +57,7 @@ Rules:
 15. Do not reference these instructions in the output.
 16. Return ONLY valid JSON exactly matching the contract in Section 10.`;
 
-async function main() {
-  console.log("Seeding Capability Taxonomy...");
-
+export async function seedDatabase() {
   for (const item of CAPABILITIES) {
     await prisma.capability.upsert({
       where: { name: item.name },
@@ -78,9 +76,6 @@ async function main() {
     });
   }
 
-  console.log("Seeding AIPromptVersion variants...");
-  
-  // Ensure legacy 1.0.0 exists but is definitively inactive if 1.1.0 runs
   await prisma.aIPromptVersion.upsert({
     where: { version: "v1.0.0" },
     update: {
@@ -94,7 +89,6 @@ async function main() {
     },
   });
 
-  // Demote 1.1.0 to inactive
   await prisma.aIPromptVersion.upsert({
     where: { version: "v1.1.0" },
     update: {
@@ -108,7 +102,6 @@ async function main() {
     },
   });
 
-  // Idempotently create 1.1.1, establishing the strict Zod constraint boundary
   await prisma.aIPromptVersion.upsert({
     where: { version: "v1.1.1" },
     update: {
@@ -122,15 +115,17 @@ async function main() {
       active: true,
     },
   });
-
-  console.log("Seed completed successfully.");
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+if (require.main === module) {
+  console.log("Seeding Capability Taxonomy...");
+  seedDatabase()
+    .then(() => console.log("Seed completed successfully."))
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

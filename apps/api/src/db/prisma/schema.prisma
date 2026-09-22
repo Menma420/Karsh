@@ -83,6 +83,7 @@ model Experiment {
   userId        String
   user          User      @relation(fields: [userId], references: [id])
 
+  title         String?
   problem       String
   hypothesis    String
   intervention  String
@@ -120,6 +121,7 @@ model Decision {
   userId           String
   user             User     @relation(fields: [userId], references: [id])
 
+  title            String?
   date             DateTime @db.Date
   decision         String
   context          String?

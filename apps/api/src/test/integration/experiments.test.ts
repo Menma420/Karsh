@@ -4,6 +4,8 @@ import app from "../../server";
 import { prisma } from "../../db/client";
 import { todayInTimezone, subtractDays, addDays } from "../../lib/date";
 
+import { seedDatabase } from "../../db/prisma/seed";
+
 describe("Experiments & Evidence M:N Integration Tests", () => {
   let cookie1: string;
   let cookie2: string; // for cross-user tests
@@ -32,6 +34,9 @@ describe("Experiments & Evidence M:N Integration Tests", () => {
     await prisma.aIAssessment.deleteMany();
     await prisma.userSettings.deleteMany();
     await prisma.user.deleteMany();
+
+    // Ensure baseline taxonomy & prompt version are seeded
+    await seedDatabase();
 
     // Setup User A
     const res1 = await request(app)
@@ -224,9 +229,9 @@ describe("Experiments & Evidence M:N Integration Tests", () => {
 
     // Verify relationships compiled functionally
     expect(md).toContain("### AI Package Exp");
-    expect(md).toContain("Protocol:");
+    expect(md).toContain("Intervention:");
     expect(md).toContain("Intervention Protocol Node");
-    expect(md).toContain("Linked Evidence:");
+    expect(md).toContain("Linked evidence:");
     expect(md).toContain("AI Package Injection");
   }, 30000);
 });

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api-client";
+import { TextFieldModal } from "@/components/TextFieldModal";
 
 export default function EditExperimentPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function EditExperimentPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const [title, setTitle] = useState("");
   const [problem, setProblem] = useState("");
   const [hypothesis, setHypothesis] = useState("");
   const [intervention, setIntervention] = useState("");
@@ -33,6 +35,7 @@ export default function EditExperimentPage() {
         const res = await apiFetch(`/experiments/${id}`);
         const exp = res.experiment;
         if (exp) {
+          setTitle(exp.title || "");
           setProblem(exp.problem || "");
           setHypothesis(exp.hypothesis || "");
           setIntervention(exp.intervention || "");
@@ -62,6 +65,7 @@ export default function EditExperimentPage() {
       await apiFetch(`/experiments/${id}`, {
         method: "PATCH",
         body: JSON.stringify({
+          title: title.trim() || null,
           problem,
           hypothesis,
           intervention,
@@ -151,50 +155,47 @@ export default function EditExperimentPage() {
           <h2 className="text-sm font-medium text-[#EDEAE3] border-b border-[#2A2934]/40 pb-1">
             Core parameters
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-[#8B8894] mb-1">Problem to solve</label>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-[#8B8894] mb-1">Experiment Title (Optional short summary)</label>
               <input
                 type="text"
-                required
-                value={problem}
-                onChange={(e) => setProblem(e.target.value)}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Deep Work Focus Protocol"
                 className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-[#8B8894] mb-1">Hypothesis</label>
-              <textarea
-                rows={2}
-                required
+            <TextFieldModal
+              label="Problem to solve"
+              value={problem}
+              onChange={setProblem}
+              required
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TextFieldModal
+                label="Hypothesis"
                 value={hypothesis}
-                onChange={(e) => setHypothesis(e.target.value)}
-                className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-[#8B8894] mb-1">Intervention</label>
-              <textarea
-                rows={2}
+                onChange={setHypothesis}
                 required
+              />
+
+              <TextFieldModal
+                label="Intervention"
                 value={intervention}
-                onChange={(e) => setIntervention(e.target.value)}
-                className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
+                onChange={setIntervention}
+                required
               />
             </div>
 
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-[#8B8894] mb-1">Measurement method</label>
-              <input
-                type="text"
-                required
-                value={measurement}
-                onChange={(e) => setMeasurement(e.target.value)}
-                className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
-              />
-            </div>
+            <TextFieldModal
+              label="Measurement method"
+              value={measurement}
+              onChange={setMeasurement}
+              required
+            />
           </div>
         </section>
 
@@ -273,8 +274,8 @@ export default function EditExperimentPage() {
                         {dStr} {entry.title ? <span className="font-normal text-[#8B8894]">| {entry.title}</span> : ""}
                       </div>
                       <div className="space-y-1 text-xs">
-                        {entry.intent && <p className="text-[#EDEAE3]"><span className="text-[#8B8894]">Intent:</span> {entry.intent}</p>}
-                        {entry.outcome && <p className="text-[#EDEAE3]"><span className="text-[#8B8894]">Outcome:</span> {entry.outcome}</p>}
+                        {entry.intent && <p className="text-[#EDEAE3] whitespace-pre-wrap"><span className="text-[#8B8894]">Intent:</span> {entry.intent}</p>}
+                        {entry.outcome && <p className="text-[#EDEAE3] whitespace-pre-wrap"><span className="text-[#8B8894]">Outcome:</span> {entry.outcome}</p>}
                       </div>
                     </Link>
                   </div>
@@ -293,37 +294,29 @@ export default function EditExperimentPage() {
             <span className="text-[10px] text-[#5C5A66] uppercase tracking-wide font-medium">Post-flight capture</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-[#8B8894] mb-1">Empirical Result</label>
-              <textarea
-                rows={3}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TextFieldModal
+                label="Empirical Result"
                 value={result}
-                onChange={(e) => setResult(e.target.value)}
+                onChange={setResult}
                 placeholder="What objectively happened?"
-                className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
               />
-            </div>
 
-            <div>
-              <label className="block text-xs font-medium text-[#C9A26D] mb-1">Extracted Lesson</label>
-              <textarea
-                rows={3}
+              <TextFieldModal
+                label="Extracted Lesson"
                 value={lesson}
-                onChange={(e) => setLesson(e.target.value)}
+                onChange={setLesson}
                 placeholder="What did you learn about your capabilities?"
-                className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
               />
             </div>
 
-            <div className="sm:col-span-2 border-t border-[#2A2934]/30 pt-3">
-              <label className="block text-xs font-medium text-[#8B8894] mb-1">Next Action (Continuous Loop)</label>
-              <input
-                type="text"
+            <div className="border-t border-[#2A2934]/30 pt-3">
+              <TextFieldModal
+                label="Next Action (Continuous Loop)"
                 value={nextAction}
-                onChange={(e) => setNextAction(e.target.value)}
+                onChange={setNextAction}
                 placeholder="How does this change future baselines..."
-                className="w-full bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-3.5 py-2 text-xs text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
               />
             </div>
           </div>

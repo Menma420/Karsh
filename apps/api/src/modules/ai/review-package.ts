@@ -295,7 +295,8 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
     md += `No experiments logged in this period.\n\n`;
   } else {
     experiments.forEach(exp => {
-      md += `### ${exp.problem}\n\n`;
+      const heading = exp.title || exp.problem;
+      md += `### ${heading}\n\n`;
       md += `Status: ${exp.status}\n\n`;
       md += `Problem:\n${exp.problem}\n\n`;
       md += `Hypothesis:\n${exp.hypothesis}\n\n`;
@@ -337,7 +338,8 @@ export async function buildReviewPackage(userId: string, req: ReviewPackageReque
   } else {
     decisions.forEach(dec => {
       const dStr = format(dec.date, "yyyy-MM-dd");
-      md += `### ${dStr} — ${dec.decision}\n\n`;
+      const heading = dec.title || dec.decision;
+      md += `### ${dStr} — ${heading}\n\n`;
       if (dec.context) md += `Context:\n${dec.context}\n\n`;
       
       if (dec.options) {

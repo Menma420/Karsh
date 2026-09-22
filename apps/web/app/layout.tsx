@@ -27,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${fraunces.variable} ${inter.variable} h-full bg-[#16151A]`}>
-      <body className="h-full flex flex-col min-h-screen text-[#EDEAE3] bg-[#16151A] antialiased selection:bg-[#C9A26D]/30 selection:text-[#EDEAE3]">
+      <body suppressHydrationWarning className="h-full flex flex-col min-h-screen text-[#EDEAE3] bg-[#16151A] antialiased selection:bg-[#C9A26D]/30 selection:text-[#EDEAE3]">
         <Navbar />
         <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8">
           {children}

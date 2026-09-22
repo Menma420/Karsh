@@ -11,6 +11,7 @@ experimentsRouter.post("/", requireAuth, async (req: AuthenticatedRequest, res: 
     const experiment = await prisma.experiment.create({
       data: {
         userId: req.userId!,
+        title: body.title,
         problem: body.problem,
         hypothesis: body.hypothesis,
         intervention: body.intervention,

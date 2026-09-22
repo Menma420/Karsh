@@ -3,9 +3,11 @@ import request from "supertest";
 import app from "../../server";
 import { prisma } from "../../db/client";
 import { todayInTimezone, subtractDays, addDays } from "../../lib/date";
+import { seedDatabase } from "../../db/prisma/seed";
 
 describe("Phase 0 & Phase 1 Integration Tests", () => {
   let cookie: string;
+  let userId: string;
   const tz = "Asia/Kolkata";
   const today = todayInTimezone(tz);
 
@@ -20,11 +22,20 @@ describe("Phase 0 & Phase 1 Integration Tests", () => {
     await prisma.entryTag.deleteMany();
     await prisma.tag.deleteMany();
     await prisma.experimentEntryLink.deleteMany();
+    await prisma.experiment.deleteMany();
     await prisma.reflectionEntry.deleteMany();
+    await prisma.decision.deleteMany();
+    await prisma.learningRecord.deleteMany();
+    await prisma.weeklyReview.deleteMany();
+    await prisma.monthlyReview.deleteMany();
+    await prisma.goal.deleteMany();
     await prisma.capabilityAssessment.deleteMany();
     await prisma.aIAssessment.deleteMany();
     await prisma.userSettings.deleteMany();
     await prisma.user.deleteMany();
+
+    // Ensure baseline taxonomy & prompt version are seeded
+    await seedDatabase();
   });
 
   afterAll(async () => {

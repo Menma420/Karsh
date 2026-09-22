@@ -45,6 +45,7 @@ export const ExperimentStatusEnum = z.enum(["PLANNED", "ACTIVE", "COMPLETED", "A
 export type ExperimentStatus = z.infer<typeof ExperimentStatusEnum>;
 
 export const CreateExperimentSchema = z.object({
+  title: z.string().optional().nullable(),
   problem: z.string().min(1, "Problem description is required"),
   hypothesis: z.string().min(1, "Hypothesis is required"),
   intervention: z.string().min(1, "Intervention is required"),
@@ -64,6 +65,7 @@ export type UpdateExperimentInput = z.infer<typeof UpdateExperimentSchema>;
 // --- Decision Schemas ---
 export const CreateDecisionSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD"),
+  title: z.string().optional().nullable(),
   decision: z.string().min(1, "Decision description is required"),
   context: z.string().optional().nullable(),
   options: z.array(z.string()).optional().nullable(),
