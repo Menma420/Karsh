@@ -1,5 +1,6 @@
 import "./global.css";
 import { Navbar } from "@/components/nav";
+import { Providers } from "@/components/Providers";
 import { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 
@@ -28,14 +29,17 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${fraunces.variable} ${inter.variable} h-full bg-[#16151A]`}>
       <body suppressHydrationWarning className="h-full flex flex-col min-h-screen text-[#EDEAE3] bg-[#16151A] antialiased selection:bg-[#C9A26D]/30 selection:text-[#EDEAE3]">
-        <Navbar />
-        <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8">
-          {children}
-        </main>
-        <footer className="border-t border-[#2A2934]/40 py-8 text-center text-xs text-[#5C5A66]">
-          Personal Capability OS &bull; Empirical Self-Improvement System
-        </footer>
+        <Providers>
+          <Navbar />
+          <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8">
+            {children}
+          </main>
+          <footer className="border-t border-[#2A2934]/40 py-8 text-center text-xs text-[#5C5A66]">
+            Personal Capability OS &bull; Empirical Self-Improvement System
+          </footer>
+        </Providers>
       </body>
     </html>
   );
 }
+

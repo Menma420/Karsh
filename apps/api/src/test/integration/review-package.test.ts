@@ -101,7 +101,7 @@ describe("AI Review Package Builder v2", () => {
     const entry = await prisma.reflectionEntry.create({
       data: {
         userId: testUserId,
-        occurredOn: today,
+        occurredOn: new Date(periodEnd + "T00:00:00.000Z"),
         title: "Test Entry",
         outcome: "Test Outcome",
       }
@@ -162,7 +162,7 @@ describe("AI Review Package Builder v2", () => {
     
     // Verify Exp 2
     expect(pkg.markdown).toContain(`### Exp With Evidence`);
-    expect(pkg.markdown).toContain(`- ${periodEnd} — "Test Entry": Test Outcome`);
+    expect(pkg.markdown).toContain(`- ${format(today, "yyyy-MM-dd")} — "Test Entry": Test Outcome`);
     
     // Both have identical trailing format
     expect(pkg.markdown).toContain("Result:\nNot yet recorded.");

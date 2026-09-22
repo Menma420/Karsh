@@ -68,3 +68,28 @@ decisionsRouter.patch("/:id", requireAuth, async (req: AuthenticatedRequest, res
     next(err);
   }
 });
+
+decisionsRouter.get("/:id", requireAuth, async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const decision = await prisma.decision.findFirst({
+      where: { id: req.params.id, userId: req.userId! },
+    });
+    if (!decision) return res.status(404).json({ error: { code: "NOT_FOUND", message: "Decision record not found" } });
+    return res.json({ decision });
+  } catch (err) {
+    next(err);
+  }
+});
+
+decisionsRouter.delete("/:id", requireAuth, async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const existing = await prisma.decision.findFirst({ where: { id: req.params.id, userId: req.userId! } });
+    if (!existing) return res.status(404).json({ error: { code: "NOT_FOUND", message: "Decision record not found" } });
+
+    await prisma.decision.delete({ where: { id: existing.id } });
+    return res.json({ message: "Decision deleted successfully" });
+  } catch (err) {
+    next(err);
+  }
+});
+

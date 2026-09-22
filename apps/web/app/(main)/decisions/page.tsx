@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api-client";
 import { TextFieldModal } from "@/components/TextFieldModal";
+import { useToast } from "@/components/Toast";
 
 export default function DecisionsPage() {
   const [decisions, setDecisions] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   const [title, setTitle] = useState("");
   const [decisionText, setDecisionText] = useState("");
@@ -26,8 +29,8 @@ export default function DecisionsPage() {
       setLoading(true);
       const res = await apiFetch("/decisions");
       setDecisions(res.decisions || []);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      toast(err.message || "Failed to load decisions", "error");
     } finally {
       setLoading(false);
     }
@@ -35,12 +38,16 @@ export default function DecisionsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) {
+      toast("Decision title is required", "error");
+      return;
+    }
     try {
       await apiFetch("/decisions", {
         method: "POST",
         body: JSON.stringify({
           date,
-          title: title.trim() || null,
+          title: title.trim(),
           decision: decisionText,
           context: context || null,
           reasoning: reasoning || null,
@@ -54,9 +61,10 @@ export default function DecisionsPage() {
       setContext("");
       setReasoning("");
       setExpectedOutcome("");
+      toast("Decision logged successfully", "success");
       loadDecisions();
     } catch (err: any) {
-      alert(err.message || "Error creating decision record");
+      toast(err.message || "Error creating decision record", "error");
     }
   };
 
@@ -86,11 +94,14 @@ export default function DecisionsPage() {
             <h2 className="text-base font-display font-medium text-[#EDEAE3]">Record decision log</h2>
             <form onSubmit={handleCreate} className="space-y-4 text-xs">
               <div>
-                <label className="block font-medium text-[#8B8894] mb-1">Decision Title (Optional short summary)</label>
+                <label className="block font-medium text-[#8B8894] mb-1">
+                  Decision Title <span className="text-[#C9A26D]">*</span>
+                </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  required
                   placeholder="e.g. Postgres DB Migration"
                   className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-2 text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
                 />
@@ -172,50 +183,35 @@ export default function DecisionsPage() {
       {loading ? (
         <div className="py-12 text-center text-xs text-[#5C5A66]">Loading decision logs...</div>
       ) : decisions.length === 0 ? (
-        <div className="py-8 text-center text-xs text-[#8B8894]">
-          No decision logs recorded yet.
+        <div className="py-8 text-center text-xs text-[#8B8894] space-y-2">
+          <p>No decision logs recorded yet.</p>
+          <button
+            onClick={() => setShowModal(true)}
+            className="text-[#C9A26D] hover:underline inline-block pt-1"
+          >
+            + Create your first decision log
+          </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-1.5">
           {decisions.map((dec) => {
-            const displayTitle = dec.title || dec.decision;
+            const dStr = dec.date ? dec.date.split("T")[0] : "";
             return (
-              <div key={dec.id} className="border-b border-[#2A2934]/40 pb-4 space-y-2 bg-[#1D1C22]/30 p-4 rounded-[8px]">
-                <div className="flex items-baseline justify-between gap-4">
-                  <h3 className="font-medium text-sm text-[#EDEAE3]">{displayTitle}</h3>
-                  <div className="flex items-center gap-3 text-xs text-[#8B8894] shrink-0">
-                    <span>{dec.date.split("T")[0]}</span>
-                    <span className="font-mono text-[#C9A26D]">Confidence: {dec.confidence}/10</span>
-                  </div>
+              <Link
+                key={dec.id}
+                href={`/decisions/${dec.id}`}
+                className="flex items-center justify-between bg-[#1D1C22] hover:bg-[#2A2934]/60 border-l-2 border-[#C9A26D]/60 hover:border-[#C9A26D] rounded-r-[8px] px-4 py-3 transition-colors group"
+              >
+                <h3 className="text-sm font-medium text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors line-clamp-1">
+                  {dec.title || dec.decision}
+                </h3>
+                <div className="flex items-center gap-3 text-[11px] shrink-0 ml-4">
+                  <span className="text-[#8B8894] font-mono">{dStr}</span>
+                  <span className="text-[#C9A26D] font-mono font-medium">
+                    {dec.confidence}/10
+                  </span>
                 </div>
-
-                <div className="space-y-2 text-xs pt-1">
-                  {dec.title && (
-                    <div>
-                      <span className="text-[#8B8894]">Decision:</span>
-                      <p className="whitespace-pre-wrap font-mono text-[11px] text-[#EDEAE3]/90 mt-0.5">{dec.decision}</p>
-                    </div>
-                  )}
-                  {dec.context && (
-                    <div>
-                      <span className="text-[#8B8894]">Context:</span>
-                      <p className="whitespace-pre-wrap font-mono text-[11px] text-[#EDEAE3]/90 mt-0.5">{dec.context}</p>
-                    </div>
-                  )}
-                  {dec.reasoning && (
-                    <div>
-                      <span className="text-[#8B8894]">Reasoning:</span>
-                      <p className="whitespace-pre-wrap font-mono text-[11px] text-[#EDEAE3]/90 mt-0.5">{dec.reasoning}</p>
-                    </div>
-                  )}
-                  {dec.expectedOutcome && (
-                    <div>
-                      <span className="text-[#8B8894]">Expected outcome:</span>
-                      <p className="whitespace-pre-wrap font-mono text-[11px] text-[#EDEAE3]/90 mt-0.5">{dec.expectedOutcome}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+              </Link>
             );
           })}
         </div>

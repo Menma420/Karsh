@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api-client";
 import { TextFieldModal } from "@/components/TextFieldModal";
+import { useToast } from "@/components/Toast";
 
 export default function ExperimentsPage() {
   const [experiments, setExperiments] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   const [title, setTitle] = useState("");
   const [problem, setProblem] = useState("");
@@ -27,8 +29,8 @@ export default function ExperimentsPage() {
       setLoading(true);
       const res = await apiFetch("/experiments");
       setExperiments(res.experiments || []);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      toast(err.message || "Failed to load experiments", "error");
     } finally {
       setLoading(false);
     }
@@ -36,11 +38,15 @@ export default function ExperimentsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) {
+      toast("Experiment title is required", "error");
+      return;
+    }
     try {
       await apiFetch("/experiments", {
         method: "POST",
         body: JSON.stringify({
-          title: title.trim() || null,
+          title: title.trim(),
           problem,
           hypothesis,
           intervention,
@@ -55,17 +61,18 @@ export default function ExperimentsPage() {
       setHypothesis("");
       setIntervention("");
       setMeasurement("");
+      toast("Experiment created successfully", "success");
       loadExperiments();
     } catch (err: any) {
-      alert(err.message || "Error creating experiment");
+      toast(err.message || "Error creating experiment", "error");
     }
   };
 
-  const statusColors: Record<string, { label: string; textClass: string }> = {
-    PLANNED: { label: "● Planned", textClass: "text-[#8B8894]" },
-    ACTIVE: { label: "● Active", textClass: "text-[#7A9B7E]" },
-    COMPLETED: { label: "● Completed", textClass: "text-[#C9A26D]" },
-    ABANDONED: { label: "● Abandoned", textClass: "text-[#B0715A]" },
+  const statusColors: Record<string, { dot: string; text: string }> = {
+    PLANNED: { dot: "bg-[#8B8894]", text: "text-[#8B8894]" },
+    ACTIVE: { dot: "bg-[#7A9B7E]", text: "text-[#7A9B7E]" },
+    COMPLETED: { dot: "bg-[#C9A26D]", text: "text-[#C9A26D]" },
+    ABANDONED: { dot: "bg-[#B0715A]", text: "text-[#B0715A]" },
   };
 
   return (
@@ -94,11 +101,14 @@ export default function ExperimentsPage() {
             <h2 className="text-base font-display font-medium text-[#EDEAE3]">Plan new capability experiment</h2>
             <form onSubmit={handleCreate} className="space-y-4 text-xs">
               <div>
-                <label className="block font-medium text-[#8B8894] mb-1">Experiment Title (Optional short summary)</label>
+                <label className="block font-medium text-[#8B8894] mb-1">
+                  Experiment Title <span className="text-[#C9A26D]">*</span>
+                </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  required
                   placeholder="e.g. Deep Work Focus Protocol"
                   className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-2 text-[#EDEAE3] placeholder:text-[#5C5A66] focus:outline-none focus:border-[#C9A26D]"
                 />
@@ -124,7 +134,7 @@ export default function ExperimentsPage() {
                 label="Intervention"
                 value={intervention}
                 onChange={setIntervention}
-                placeholder="Specific action protocol to test (e.g. 90-min uninterrupted blocks with phone in another room)..."
+                placeholder="Specific action protocol to test..."
                 required
               />
 
@@ -195,45 +205,22 @@ export default function ExperimentsPage() {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-1.5">
           {experiments.map((exp) => {
-            const statusInfo = statusColors[exp.status] || statusColors.PLANNED;
-            const displayTitle = exp.title || exp.problem;
+            const s = statusColors[exp.status] || statusColors.PLANNED;
             return (
               <Link
                 key={exp.id}
                 href={`/experiments/${exp.id}`}
-                className="block bg-[#1D1C22] border-l-2 border-[#C9A26D] rounded-r-[10px] p-5 space-y-3 hover:bg-[#2A2934]/60 transition-colors cursor-pointer group"
+                className="flex items-center justify-between bg-[#1D1C22] hover:bg-[#2A2934]/60 border-l-2 border-[#C9A26D]/60 hover:border-[#C9A26D] rounded-r-[8px] px-4 py-3 transition-colors group"
               >
-                <div className="flex items-center justify-between border-b border-[#2A2934]/40 pb-2">
-                  <h3 className="font-medium text-sm text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors line-clamp-1">{displayTitle}</h3>
-                  <span className={`text-xs ${statusInfo.textClass} shrink-0`}>
-                    {statusInfo.label}
-                  </span>
-                </div>
-
-                <div className="space-y-2 text-xs">
-                  {exp.title && (
-                    <div className="text-[#EDEAE3]">
-                      <span className="text-[#8B8894]">Problem:</span>
-                      <p className="whitespace-pre-wrap mt-0.5 font-mono text-[11px] text-[#EDEAE3]/90">{exp.problem}</p>
-                    </div>
-                  )}
-                  <div>
-                    <span className="text-[#8B8894]">Hypothesis:</span>
-                    <p className="whitespace-pre-wrap mt-0.5 font-mono text-[11px] text-[#EDEAE3]/90">{exp.hypothesis}</p>
-                  </div>
-                  <div>
-                    <span className="text-[#8B8894]">Intervention:</span>
-                    <p className="whitespace-pre-wrap mt-0.5 font-mono text-[11px] text-[#EDEAE3]/90">{exp.intervention}</p>
-                  </div>
-                  {exp.result && (
-                    <div>
-                      <span className="text-[#C9A26D]">Result:</span>
-                      <p className="whitespace-pre-wrap mt-0.5 font-mono text-[11px] text-[#C9A26D]/90">{exp.result}</p>
-                    </div>
-                  )}
-                </div>
+                <h3 className="text-sm font-medium text-[#EDEAE3] group-hover:text-[#C9A26D] transition-colors line-clamp-1">
+                  {exp.title || exp.problem}
+                </h3>
+                <span className={`text-[11px] ${s.text} flex items-center gap-1.5 shrink-0 ml-4`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                  {exp.status}
+                </span>
               </Link>
             );
           })}

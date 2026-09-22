@@ -4,11 +4,10 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api-client";
-import { TextFieldModal } from "@/components/TextFieldModal";
 import { RichText } from "@/components/RichText";
 import { useToast } from "@/components/Toast";
 
-export default function ExperimentWorkbenchPage() {
+export default function DecisionWorkbenchPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -18,40 +17,34 @@ export default function ExperimentWorkbenchPage() {
   const [saving, setSaving] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [problem, setProblem] = useState("");
-  const [hypothesis, setHypothesis] = useState("");
-  const [intervention, setIntervention] = useState("");
-  const [measurement, setMeasurement] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [status, setStatus] = useState("ACTIVE");
-  const [result, setResult] = useState("");
+  const [decisionText, setDecisionText] = useState("");
+  const [context, setContext] = useState("");
+  const [reasoning, setReasoning] = useState("");
+  const [expectedOutcome, setExpectedOutcome] = useState("");
+  const [actualOutcome, setActualOutcome] = useState("");
   const [lesson, setLesson] = useState("");
-  const [nextAction, setNextAction] = useState("");
-  const [linkedEntries, setLinkedEntries] = useState<any[]>([]);
+  const [confidence, setConfidence] = useState<number>(7);
+  const [date, setDate] = useState("");
 
   useEffect(() => {
     async function load() {
       try {
         setLoading(true);
-        const res = await apiFetch(`/experiments/${id}`);
-        const exp = res.experiment;
-        if (exp) {
-          setTitle(exp.title || "");
-          setProblem(exp.problem || "");
-          setHypothesis(exp.hypothesis || "");
-          setIntervention(exp.intervention || "");
-          setMeasurement(exp.measurement || "");
-          setStartDate(exp.startDate ? exp.startDate.split("T")[0] : "");
-          setEndDate(exp.endDate ? exp.endDate.split("T")[0] : "");
-          setStatus(exp.status || "ACTIVE");
-          setResult(exp.result || "");
-          setLesson(exp.lesson || "");
-          setNextAction(exp.nextAction || "");
-          setLinkedEntries(exp.linkedEntries || []);
+        const res = await apiFetch(`/decisions/${id}`);
+        const dec = res.decision;
+        if (dec) {
+          setTitle(dec.title || "");
+          setDecisionText(dec.decision || "");
+          setContext(dec.context || "");
+          setReasoning(dec.reasoning || "");
+          setExpectedOutcome(dec.expectedOutcome || "");
+          setActualOutcome(dec.actualOutcome || "");
+          setLesson(dec.lesson || "");
+          setConfidence(dec.confidence || 7);
+          setDate(dec.date ? dec.date.split("T")[0] : "");
         }
       } catch (err: any) {
-        toast(err.message || "Failed to load experiment", "error");
+        toast(err.message || "Failed to load decision log", "error");
       } finally {
         setLoading(false);
       }
@@ -61,63 +54,44 @@ export default function ExperimentWorkbenchPage() {
 
   const handleSave = async () => {
     if (!title.trim()) {
-      toast("Experiment title is required", "error");
+      toast("Decision title is required", "error");
       return;
     }
     setSaving(true);
     try {
-      await apiFetch(`/experiments/${id}`, {
+      await apiFetch(`/decisions/${id}`, {
         method: "PATCH",
         body: JSON.stringify({
           title: title.trim(),
-          problem,
-          hypothesis,
-          intervention,
-          measurement,
-          startDate: startDate || null,
-          endDate: endDate || null,
-          status,
-          result: result || null,
+          decision: decisionText,
+          context: context || null,
+          reasoning: reasoning || null,
+          expectedOutcome: expectedOutcome || null,
+          actualOutcome: actualOutcome || null,
           lesson: lesson || null,
-          nextAction: nextAction || null,
+          confidence: Number(confidence),
+          date: date || null,
         }),
       });
-      toast("Experiment saved", "success");
+      toast("Decision log saved", "success");
     } catch (err: any) {
-      toast(err.message || "Failed to save experiment", "error");
+      toast(err.message || "Failed to save decision", "error");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Permanently delete this experiment?")) return;
+    if (!window.confirm("Permanently delete this decision log?")) return;
     try {
       setSaving(true);
-      await apiFetch(`/experiments/${id}`, { method: "DELETE" });
-      toast("Experiment deleted", "success");
-      router.replace("/experiments");
+      await apiFetch(`/decisions/${id}`, { method: "DELETE" });
+      toast("Decision log deleted", "success");
+      router.replace("/decisions");
     } catch (err: any) {
-      toast(err.message || "Failed to delete experiment", "error");
+      toast(err.message || "Failed to delete decision", "error");
       setSaving(false);
     }
-  };
-
-  const handleUnlink = async (entryId: string) => {
-    try {
-      await apiFetch(`/experiments/${id}/entries/${entryId}`, { method: "DELETE" });
-      setLinkedEntries((prev) => prev.filter((link) => link.entryId !== entryId));
-      toast("Evidence unlinked", "info");
-    } catch (err: any) {
-      toast(err.message || "Failed to unlink entry", "error");
-    }
-  };
-
-  const statusColors: Record<string, { dot: string; text: string }> = {
-    PLANNED: { dot: "bg-[#8B8894]", text: "text-[#8B8894]" },
-    ACTIVE: { dot: "bg-[#7A9B7E]", text: "text-[#7A9B7E]" },
-    COMPLETED: { dot: "bg-[#C9A26D]", text: "text-[#C9A26D]" },
-    ABANDONED: { dot: "bg-[#B0715A]", text: "text-[#B0715A]" },
   };
 
   if (loading) {
@@ -128,113 +102,69 @@ export default function ExperimentWorkbenchPage() {
     );
   }
 
-  const s = statusColors[status] || statusColors.PLANNED;
-
   return (
     <div className="max-w-2xl mx-auto space-y-6 pt-4 pb-12">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <Link href="/experiments" className="text-[11px] text-[#8B8894] hover:text-[#EDEAE3] transition-colors">
-            ← Experiments
+          <Link href="/decisions" className="text-[11px] text-[#8B8894] hover:text-[#EDEAE3] transition-colors">
+            ← Decisions
           </Link>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Experiment title"
+            placeholder="Decision title"
             className="block w-full mt-1 text-xl font-display font-medium text-[#EDEAE3] bg-transparent border-none outline-none placeholder:text-[#5C5A66] focus:outline-none"
           />
           <div className="flex items-center gap-4 mt-2 text-[11px] text-[#8B8894]">
-            <span>Started {startDate || "—"}</span>
-            {endDate && <span>Ended {endDate}</span>}
+            <span>Date: {date || "—"}</span>
+            <span>Confidence: {confidence}/10</span>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 pt-5">
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className={`${s.text} bg-[#1D1C22] border border-[#2A2934] rounded-[6px] px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-[#C9A26D]`}
-          >
-            <option value="PLANNED">PLANNED</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="COMPLETED">COMPLETED</option>
-            <option value="ABANDONED">ABANDONED</option>
-          </select>
         </div>
       </div>
 
       <div className="border-t border-[#2A2934]/40" />
 
-      {/* Core Parameters — Click-to-edit cards */}
+      {/* Core Fields */}
       <div className="space-y-1">
-        <FieldCard label="Problem" value={problem} onChange={setProblem} placeholder="Describe the bottleneck or problem..." required />
-        <FieldCard label="Hypothesis" value={hypothesis} onChange={setHypothesis} placeholder="If I do X, then Y will improve because..." required />
-        <FieldCard label="Intervention" value={intervention} onChange={setIntervention} placeholder="Specific action protocol to test..." required />
-        <FieldCard label="Measurement" value={measurement} onChange={setMeasurement} placeholder="How to objectively measure success..." required />
+        <FieldCard label="Decision Made" value={decisionText} onChange={setDecisionText} placeholder="Describe the decision in detail..." required />
+        <FieldCard label="Context & Constraints" value={context} onChange={setContext} placeholder="Why this decision was necessary..." />
+        <FieldCard label="Reasoning / Tradeoffs" value={reasoning} onChange={setReasoning} placeholder="Rationale & options considered..." />
+        <FieldCard label="Expected Outcome" value={expectedOutcome} onChange={setExpectedOutcome} placeholder="What success looks like..." />
       </div>
 
-      {/* Date controls */}
+      {/* Controls */}
       <div className="bg-[#1D1C22] border border-[#2A2934]/40 rounded-[8px] p-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-medium text-[#8B8894] mb-1">Start Date</label>
+            <label className="block text-[11px] font-medium text-[#8B8894] mb-1">Decision Date</label>
             <input
               type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
               className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-1.5 text-xs text-[#EDEAE3] focus:outline-none focus:border-[#C9A26D]"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-[#8B8894] mb-1">End Date</label>
+            <label className="block text-[11px] font-medium text-[#8B8894] mb-1">Confidence Score (1-10)</label>
             <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              type="number"
+              min={1}
+              max={10}
+              value={confidence}
+              onChange={(e) => setConfidence(Number(e.target.value))}
               className="w-full bg-[#16151A] border border-[#2A2934] rounded-[6px] px-3 py-1.5 text-xs text-[#EDEAE3] focus:outline-none focus:border-[#C9A26D]"
             />
           </div>
         </div>
       </div>
 
-      {/* Linked Evidence */}
-      <section className="space-y-2">
-        <h2 className="text-xs font-medium text-[#8B8894] uppercase tracking-wide">Linked Evidence</h2>
-        {!linkedEntries || linkedEntries.length === 0 ? (
-          <p className="text-xs text-[#5C5A66] italic py-2">No evidence linked yet.</p>
-        ) : (
-          <div className="space-y-1.5">
-            {linkedEntries.map((link) => {
-              const entry = link.entry;
-              const dStr = entry.occurredOn?.split("T")[0];
-              return (
-                <div key={entry.id} className="flex items-center justify-between bg-[#1D1C22] border border-[#2A2934]/40 rounded-[8px] px-3 py-2.5 group">
-                  <Link href={`/entries/${entry.id}`} className="text-xs text-[#EDEAE3] hover:text-[#C9A26D] transition-colors flex-1 min-w-0">
-                    <span className="text-[#8B8894] font-mono mr-2">{dStr}</span>
-                    <span className="line-clamp-1">{entry.title || "Reflection Entry"}</span>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => handleUnlink(entry.id)}
-                    className="text-[10px] text-[#8B8894] hover:text-[#B0715A] opacity-0 group-hover:opacity-100 transition-all ml-2 shrink-0"
-                  >
-                    Unlink
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* Output Diagnostics */}
+      {/* Outcome Diagnostics */}
       <section className="space-y-1">
-        <h2 className="text-xs font-medium text-[#8B8894] uppercase tracking-wide">Diagnostic Outputs</h2>
-        <FieldCard label="Result" value={result} onChange={setResult} placeholder="What objectively happened?" />
-        <FieldCard label="Lesson" value={lesson} onChange={setLesson} placeholder="What did you learn about your capabilities?" />
-        <FieldCard label="Next Action" value={nextAction} onChange={setNextAction} placeholder="How does this change future baselines..." />
+        <h2 className="text-xs font-medium text-[#8B8894] uppercase tracking-wide">Outcome Diagnostics</h2>
+        <FieldCard label="Actual Outcome" value={actualOutcome} onChange={setActualOutcome} placeholder="What actually happened after the decision..." />
+        <FieldCard label="Extracted Lesson" value={lesson} onChange={setLesson} placeholder="What did you learn about your decision framework?" />
       </section>
 
       {/* Footer Actions */}
@@ -244,7 +174,7 @@ export default function ExperimentWorkbenchPage() {
           onClick={handleDelete}
           className="text-[11px] text-[#B0715A] hover:text-red-400 font-medium transition-colors"
         >
-          Delete experiment
+          Delete decision log
         </button>
         <button
           onClick={handleSave}
@@ -258,7 +188,7 @@ export default function ExperimentWorkbenchPage() {
   );
 }
 
-/* ─── Reusable Field Card ─────────────────────────────── */
+/* ─── Field Card Component ─────────────────────────────── */
 
 function FieldCard({
   label,
@@ -316,7 +246,6 @@ function FieldCard({
         )}
       </div>
 
-      {/* Full-screen editor modal */}
       {editing && (
         <div className="fixed inset-0 bg-[#16151A]/85 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6">
           <div className="bg-[#1D1C22] border border-[#2A2934] w-full max-w-3xl rounded-[12px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
